@@ -73,8 +73,8 @@ include __DIR__ . '/includes/header.php';
 
 <?= renderFlash() ?>
 
-<div class="mb-4">
-    <h3 class="mb-0"><i class="bi bi-gear me-2"></i>Configurações do Sistema</h3>
+<div class="admin-page-header">
+    <h3><i class="bi bi-gear me-2"></i>Configurações do Sistema</h3>
 </div>
 
 <ul class="nav nav-tabs mb-4" id="configTabs">

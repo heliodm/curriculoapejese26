@@ -79,8 +79,8 @@ include __DIR__ . '/includes/header.php';
 
 <?= renderFlash() ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="mb-0"><i class="bi bi-tags me-2"></i>Categorias</h3>
+<div class="admin-page-header">
+    <h3><i class="bi bi-tags me-2"></i>Categorias</h3>
     <?php if ($acao !== 'novo' && !$editing): ?>
     <a href="?acao=novo" class="btn btn-primary-custom"><i class="bi bi-plus-lg me-1"></i>Nova Categoria</a>
     <?php endif; ?>

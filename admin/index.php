@@ -15,9 +15,9 @@ include __DIR__ . '/includes/header.php';
 
 <?= renderFlash() ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="admin-page-header">
     <div>
-        <h3 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h3>
+        <h3><i class="bi bi-speedometer2 me-2"></i>Dashboard</h3>
         <small class="text-muted">Bem-vindo, <?= e($_SESSION['full_name'] ?? '') ?>!</small>
     </div>
     <a href="<?= BASE_URL ?>/admin/curriculos.php?acao=novo" class="btn btn-primary-custom">

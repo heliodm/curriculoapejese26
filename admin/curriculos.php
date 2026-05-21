@@ -127,8 +127,8 @@ if (in_array($acao, ['novo', 'editar'])) {
     include __DIR__ . '/includes/header.php';
     ?>
     <?= renderFlash() ?>
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="mb-0"><i class="bi bi-<?= $editing ? 'pencil' : 'file-person' ?> me-2"></i><?= $pageTitle ?></h3>
+    <div class="admin-page-header">
+        <h3><i class="bi bi-<?= $editing ? 'pencil' : 'file-person' ?> me-2"></i><?= $pageTitle ?></h3>
         <a href="<?= BASE_URL ?>/admin/curriculos.php" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i>Voltar
         </a>
@@ -352,8 +352,8 @@ include __DIR__ . '/includes/header.php';
 
 <?= renderFlash() ?>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="mb-0"><i class="bi bi-file-person me-2"></i>Currículos</h3>
+<div class="admin-page-header">
+    <h3><i class="bi bi-file-person me-2"></i>Currículos</h3>
     <a href="?acao=novo" class="btn btn-primary-custom"><i class="bi bi-plus-lg me-1"></i>Novo Currículo</a>
 </div>
 

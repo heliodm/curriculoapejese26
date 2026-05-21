@@ -1,25 +1,31 @@
 'use strict';
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Sidebar toggle (mobile)
-    const toggle  = document.getElementById('sidebarToggle');
-    const sidebar = document.getElementById('adminSidebar');
-    if (toggle && sidebar) {
-        toggle.addEventListener('click', function () {
-            sidebar.classList.toggle('open');
-        });
-        document.addEventListener('click', function (e) {
-            if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
-                sidebar.classList.remove('open');
-            }
-        });
+    const toggle   = document.getElementById('sidebarToggle');
+    const sidebar  = document.getElementById('adminSidebar');
+    const overlay  = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+        sidebar?.classList.add('open');
+        overlay?.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+        sidebar?.classList.remove('open');
+        overlay?.classList.remove('show');
+        document.body.style.overflow = '';
     }
 
-    // Auto-dismiss alerts
+    toggle?.addEventListener('click', function () {
+        sidebar?.classList.contains('open') ? closeSidebar() : openSidebar();
+    });
+    overlay?.addEventListener('click', closeSidebar);
+
+    // Auto-dismiss alerts after 5s
     document.querySelectorAll('.alert-dismissible').forEach(function (el) {
         setTimeout(function () {
-            const bsAlert = bootstrap.Alert.getOrCreateInstance(el);
-            if (bsAlert) bsAlert.close();
+            const a = bootstrap.Alert.getOrCreateInstance(el);
+            if (a) a.close();
         }, 5000);
     });
 
@@ -33,6 +39,6 @@ function toggleField(fieldId, iconId) {
     const f = document.getElementById(fieldId);
     const i = document.getElementById(iconId);
     if (!f) return;
-    if (f.type === 'password') { f.type = 'text'; if (i) i.className = 'bi bi-eye-slash'; }
-    else { f.type = 'password'; if (i) i.className = 'bi bi-eye'; }
+    if (f.type === 'password') { f.type = 'text';     if (i) i.className = 'bi bi-eye-slash'; }
+    else                       { f.type = 'password'; if (i) i.className = 'bi bi-eye';       }
 }
