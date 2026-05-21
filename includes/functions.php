@@ -162,12 +162,9 @@ function getCategories(): array {
     }
 }
 
-/**
- * Verifica se a coluna `consent` existe na tabela resumes.
- * Retorna false em bancos instalados antes da migração v1.1.
- */
-function hasConsentColumn(): bool {
+function hasConsentColumn(bool $reset = false): bool {
     static $result = null;
+    if ($reset) $result = null;
     if ($result === null) {
         try {
             db()->query("SELECT consent FROM resumes LIMIT 0");
@@ -177,4 +174,15 @@ function hasConsentColumn(): bool {
         }
     }
     return $result;
+}
+
+function ensureConsentColumn(): void {
+    if (!hasConsentColumn()) {
+        try {
+            db()->exec("ALTER TABLE resumes ADD COLUMN `consent` TINYINT(1) NOT NULL DEFAULT 0 AFTER `active`");
+        } catch (\Exception $e) {
+            // Column added by concurrent request, or other non-critical error — ignore.
+        }
+        hasConsentColumn(true);
+    }
 }

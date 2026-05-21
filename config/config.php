@@ -52,3 +52,6 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 require_once SITE_ROOT . '/config/database.php';
 require_once SITE_ROOT . '/includes/functions.php';
 require_once SITE_ROOT . '/includes/auth.php';
+
+// Auto-migrate: add consent column if the database predates v1.1
+try { ensureConsentColumn(); } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
