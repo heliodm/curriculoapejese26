@@ -1,0 +1,224 @@
+/* ===== CSS Variables ===== */
+:root {
+    --primary:     #1B3A6B;
+    --secondary:   #C9A227;
+    --accent:      #E63946;
+    --text:        #1A1A2E;
+    --bg:          #FFFFFF;
+    --header-bg:   #1B3A6B;
+    --footer-bg:   #0D1F3C;
+    --primary-light: rgba(27,58,107,.12);
+    --secondary-light: rgba(201,162,39,.15);
+    --radius:      10px;
+    --shadow:      0 4px 20px rgba(0,0,0,.10);
+    --shadow-sm:   0 2px 8px rgba(0,0,0,.08);
+    --transition:  .2s ease;
+}
+
+/* ===== Base ===== */
+* { box-sizing: border-box; }
+
+body {
+    font-family: Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+a { color: var(--primary); transition: color var(--transition); }
+a:hover { color: var(--secondary); }
+
+/* ===== HEADER ===== */
+.site-header { background: var(--header-bg); box-shadow: 0 2px 10px rgba(0,0,0,.2); position: sticky; top: 0; z-index: 1030; }
+.site-header .navbar { padding: .6rem 0; }
+.site-header .navbar-brand { color: #fff !important; font-size: 1.1rem; font-weight: 700; }
+.site-header .nav-link { color: rgba(255,255,255,.85) !important; font-size: .9rem; padding: .4rem .75rem; border-radius: 6px; transition: background var(--transition), color var(--transition); }
+.site-header .nav-link:hover { color: #fff !important; background: rgba(255,255,255,.15); }
+.site-header .navbar-toggler { border-color: rgba(255,255,255,.3); }
+.site-header .navbar-toggler-icon { filter: invert(1); }
+.header-logo { height: 40px; width: auto; max-width: 130px; object-fit: contain; }
+.brand-name { color: #fff; font-size: 1.05rem; font-weight: 700; letter-spacing: .02em; }
+.site-header .dropdown-menu { border: none; box-shadow: var(--shadow); }
+
+/* ===== CUSTOM BUTTONS ===== */
+.btn-primary-custom {
+    background: var(--primary); color: #fff; border: none;
+    border-radius: 6px; font-family: Tahoma, sans-serif; font-size: .875rem;
+    padding: .45rem 1rem; transition: background var(--transition), transform var(--transition);
+}
+.btn-primary-custom:hover { background: #153059; color: #fff; transform: translateY(-1px); }
+
+.btn-secondary-custom {
+    background: var(--secondary); color: var(--text); border: none;
+    border-radius: 6px; font-family: Tahoma, sans-serif; font-size: .875rem;
+    padding: .45rem 1rem; transition: background var(--transition);
+}
+.btn-secondary-custom:hover { background: #b8911f; color: var(--text); }
+
+.btn-xs { padding: .2rem .45rem; font-size: .75rem; border-radius: 5px; }
+
+/* ===== HERO SECTION ===== */
+.hero-section {
+    background: linear-gradient(135deg, var(--primary) 0%, #2a5298 60%, #1d4a7a 100%);
+    color: #fff; padding: 3.5rem 0 2.5rem;
+}
+.hero-title { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; margin-bottom: .5rem; }
+.hero-subtitle { font-size: 1rem; opacity: .85; margin-bottom: 1.5rem; }
+
+.search-form { max-width: 680px; margin: 0 auto; }
+.search-group .input-group-text { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.3); color: #fff; }
+.search-group .form-control { border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.97); font-family: Tahoma, sans-serif; }
+.search-group .form-control:focus { box-shadow: 0 0 0 .2rem rgba(201,162,39,.35); border-color: var(--secondary); }
+
+/* ===== CATEGORIES ===== */
+.categories-section { background: #f4f6fb; border-bottom: 1px solid #e0e4ef; }
+.category-pill {
+    display: inline-block; padding: .35rem .85rem; border-radius: 50px;
+    background: #fff; color: var(--text); font-size: .82rem; border: 1.5px solid #dde2f0;
+    text-decoration: none; transition: all var(--transition); white-space: nowrap;
+}
+.category-pill:hover, .category-pill.active {
+    background: var(--primary); color: #fff; border-color: var(--primary);
+}
+
+/* ===== RESUME CARD ===== */
+.main-content { flex: 1; background: #f8f9fc; }
+
+.resume-card {
+    background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-sm);
+    border: 1px solid #eaecf4; overflow: hidden; transition: box-shadow var(--transition), transform var(--transition);
+    display: flex; flex-direction: column;
+}
+.resume-card:hover { box-shadow: var(--shadow); transform: translateY(-3px); }
+
+.resume-card-photo { aspect-ratio: 1; overflow: hidden; background: #f0f2f8; text-align: center; }
+.resume-card-photo img { width: 100%; height: 100%; object-fit: cover; }
+.resume-card-placeholder { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: var(--primary-light); color: var(--primary); font-size: 3.5rem; }
+
+.resume-card-body { padding: 1rem; flex: 1; }
+.resume-card-category { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--secondary); display: block; margin-bottom: .3rem; }
+.resume-card-name { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: .2rem; line-height: 1.3; }
+.resume-card-profession { font-size: .82rem; color: #556; margin-bottom: .4rem; }
+.resume-card-about { font-size: .8rem; color: #777; line-height: 1.5; margin-bottom: 0; }
+.resume-card-footer { padding: .75rem 1rem; border-top: 1px solid #f0f2f8; }
+
+/* ===== RESUME PAGE ===== */
+.resume-page {
+    background: #fff; border-radius: var(--radius); box-shadow: var(--shadow);
+    overflow: hidden; border: 1px solid #eaecf4;
+}
+
+.resume-left {
+    background: linear-gradient(180deg, var(--primary) 0%, #2a5298 100%);
+    color: #fff; padding: 2rem 1.5rem;
+}
+
+.resume-photo-wrap { text-align: center; margin-bottom: 1.25rem; }
+.resume-photo {
+    width: 150px; height: 150px; border-radius: 50%; object-fit: cover;
+    border: 4px solid rgba(255,255,255,.35); box-shadow: 0 4px 20px rgba(0,0,0,.25);
+}
+.resume-photo-placeholder {
+    width: 150px; height: 150px; border-radius: 50%; margin: 0 auto;
+    background: rgba(255,255,255,.15); display: flex; align-items: center;
+    justify-content: center; font-size: 4rem; color: rgba(255,255,255,.6);
+    border: 4px solid rgba(255,255,255,.2);
+}
+
+.resume-identity { text-align: center; margin-bottom: 1.5rem; }
+.resume-name { font-size: 1.3rem; font-weight: 700; margin-bottom: .25rem; color: #fff; }
+.resume-profession { font-size: .9rem; color: rgba(255,255,255,.8); margin-bottom: .5rem; }
+.resume-formation-badge, .resume-cat-badge {
+    display: block; font-size: .75rem; padding: .3rem .7rem; border-radius: 50px;
+    background: rgba(255,255,255,.15); color: #fff; margin: .25rem auto; max-width: fit-content;
+    border: 1px solid rgba(255,255,255,.25);
+}
+.resume-cat-badge { background: var(--secondary); color: var(--text); border-color: transparent; font-weight: 600; }
+
+.resume-section-title { font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: rgba(255,255,255,.6); margin-bottom: .75rem; font-weight: 600; }
+
+.resume-contacts { display: flex; flex-direction: column; gap: .5rem; }
+.resume-contact-item {
+    display: flex; align-items: center; gap: .6rem; padding: .5rem .75rem;
+    background: rgba(255,255,255,.12); border-radius: 8px; color: rgba(255,255,255,.9);
+    text-decoration: none; font-size: .82rem; transition: background var(--transition); word-break: break-all;
+}
+.resume-contact-item:hover { background: rgba(255,255,255,.22); color: #fff; }
+.resume-contact-item.whatsapp:hover { background: rgba(37,211,102,.25); }
+.resume-contact-item i { font-size: 1rem; flex-shrink: 0; }
+
+.resume-right { padding: 2rem 1.75rem; }
+
+.resume-section { margin-bottom: 1.75rem; }
+.resume-section:last-child { margin-bottom: 0; }
+.resume-section-heading {
+    font-size: .85rem; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--primary); font-weight: 700; margin-bottom: 1rem;
+    padding-bottom: .5rem; border-bottom: 2px solid var(--secondary);
+}
+.resume-text { font-size: .88rem; line-height: 1.75; color: #444; white-space: pre-wrap; }
+
+.resume-social-links { display: flex; flex-wrap: wrap; gap: .6rem; }
+.social-link {
+    display: inline-flex; align-items: center; gap: .5rem; padding: .4rem .85rem;
+    background: var(--primary-light); color: var(--primary); border-radius: 50px;
+    font-size: .82rem; text-decoration: none; transition: all var(--transition);
+    border: 1px solid rgba(27,58,107,.15);
+}
+.social-link:hover { background: var(--primary); color: #fff; }
+
+/* Resume Action Buttons */
+.resume-actions { margin-top: 1.5rem; }
+.btn-action-qr  { background: var(--primary);   color: #fff; border: none; border-radius: 8px; padding: .6rem 1.5rem; font-family: Tahoma,sans-serif; transition: background var(--transition); }
+.btn-action-qr:hover  { background: #153059; color: #fff; }
+.btn-action-pdf { background: var(--accent);    color: #fff; border: none; border-radius: 8px; padding: .6rem 1.5rem; font-family: Tahoma,sans-serif; transition: background var(--transition); }
+.btn-action-pdf:hover { background: #c0303a; color: #fff; }
+.btn-action-back { background: #f0f2f8; color: var(--text); border: none; border-radius: 8px; padding: .6rem 1.5rem; font-family: Tahoma,sans-serif; }
+.btn-action-back:hover { background: #e0e3ef; }
+
+.qr-image { max-width: 280px; border: 8px solid var(--primary); border-radius: 12px; }
+
+/* ===== PAGINATION ===== */
+.pagination-custom .page-link {
+    color: var(--primary); border-radius: 6px; margin: 0 2px; border-color: #dde2f0;
+}
+.pagination-custom .page-item.active .page-link { background: var(--primary); border-color: var(--primary); }
+.pagination-custom .page-link:hover { background: var(--primary-light); color: var(--primary); }
+
+/* ===== FOOTER ===== */
+.site-footer { background: var(--footer-bg); color: rgba(255,255,255,.75); margin-top: auto; }
+.site-footer a { color: rgba(255,255,255,.75); }
+.site-footer a:hover { color: var(--secondary); }
+.footer-brand { font-weight: 700; color: #fff; font-size: .95rem; }
+
+/* ===== LOGIN ===== */
+.login-page { background: linear-gradient(135deg, var(--primary) 0%, #2a5298 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+.login-wrapper { width: 100%; max-width: 420px; padding: 1rem; }
+.login-card { background: #fff; border-radius: 14px; box-shadow: 0 8px 40px rgba(0,0,0,.25); overflow: hidden; }
+.login-header { background: linear-gradient(135deg, var(--primary) 0%, #2a5298 100%); color: #fff; text-align: center; padding: 2rem 1.5rem 1.5rem; }
+.login-header h4 { margin: .5rem 0 .2rem; font-weight: 700; }
+.login-header p { opacity: .75; font-size: .85rem; margin: 0; }
+.login-logo { height: 50px; max-width: 160px; object-fit: contain; }
+.login-body { padding: 1.75rem; }
+.login-footer { text-align: center; padding: 1rem; border-top: 1px solid #f0f2f8; font-size: .83rem; }
+.login-footer a { color: var(--primary); text-decoration: none; }
+
+/* ===== EMPTY STATE ===== */
+.empty-state { color: #aaa; }
+
+/* ===== PRINT STYLES ===== */
+@media print {
+    .no-print, .site-header, .site-footer, nav.breadcrumb, .resume-actions { display: none !important; }
+    .resume-page { box-shadow: none !important; border: none !important; }
+    .resume-left { background: var(--primary) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #fff !important; }
+    body { background: #fff; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 767px) {
+    .resume-left  { padding: 1.5rem; }
+    .resume-right { padding: 1.25rem; }
+    .hero-section { padding: 2rem 0 1.5rem; }
+}

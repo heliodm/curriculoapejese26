@@ -1,0 +1,15 @@
+Options -Indexes
+
+# Protect sensitive files
+<FilesMatch "^(install\.lock|composer\.(json|lock)|\.env)$">
+    Require all denied
+</FilesMatch>
+
+# Pretty URLs (optional future enhancement)
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Force HTTPS (uncomment in production)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]

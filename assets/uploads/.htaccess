@@ -1,0 +1,8 @@
+# Prevent execution of any scripts in uploads directory
+Options -ExecCGI
+RemoveHandler .php .php3 .php4 .php5 .php7 .php8 .phtml .phar .shtml .cgi .pl .py .rb
+RemoveType  .php .php3 .php4 .php5 .php7 .php8 .phtml .phar
+
+<FilesMatch "\.(php|php3|php4|php5|php7|php8|phtml|phar|shtml|cgi|pl|py|rb)$">
+    Require all denied
+</FilesMatch>
