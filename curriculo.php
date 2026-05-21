@@ -7,7 +7,7 @@ if (!$slug) redirect(BASE_URL . '/index.php');
 $stmt = db()->prepare("SELECT r.*, c.name AS category_name
     FROM resumes r
     LEFT JOIN categories c ON c.id = r.category_id
-    WHERE r.slug = ? AND r.active = 1");
+    WHERE r.slug = ? AND r.active = 1 AND r.consent = 1");
 $stmt->execute([$slug]);
 $r = $stmt->fetch();
 

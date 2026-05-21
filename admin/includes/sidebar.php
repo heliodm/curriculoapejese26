@@ -1,25 +1,50 @@
 <?php
 $currentFile = basename($_SERVER['PHP_SELF']);
-
-$menu = [
-    ['file' => 'index.php',         'icon' => 'bi-speedometer2',   'label' => 'Dashboard'],
-    ['file' => 'curriculos.php',    'icon' => 'bi-file-person',    'label' => 'Currículos'],
-    ['file' => 'categorias.php',    'icon' => 'bi-tags',           'label' => 'Categorias'],
-    ['file' => 'usuarios.php',      'icon' => 'bi-people',         'label' => 'Usuários'],
-    ['file' => 'configuracoes.php', 'icon' => 'bi-gear',           'label' => 'Configurações'],
-];
+$role        = $_SESSION['role'] ?? 'user';
+$isAdmin     = in_array($role, ['admin', 'editor']);
 ?>
 <aside class="admin-sidebar" id="adminSidebar">
     <ul class="sidebar-menu list-unstyled mb-0">
-        <?php foreach ($menu as $item): ?>
+
         <li>
-            <a href="<?= BASE_URL ?>/admin/<?= $item['file'] ?>"
-               class="sidebar-link <?= $currentFile === $item['file'] ? 'active' : '' ?>">
-                <i class="bi <?= $item['icon'] ?>"></i>
-                <span><?= $item['label'] ?></span>
+            <a href="<?= BASE_URL ?>/admin/index.php"
+               class="sidebar-link <?= $currentFile === 'index.php' ? 'active' : '' ?>">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
             </a>
         </li>
-        <?php endforeach; ?>
+
+        <li>
+            <a href="<?= BASE_URL ?>/admin/curriculos.php"
+               class="sidebar-link <?= $currentFile === 'curriculos.php' ? 'active' : '' ?>">
+                <i class="bi bi-file-person"></i>
+                <span><?= $isAdmin ? 'Currículos' : 'Meu Currículo' ?></span>
+            </a>
+        </li>
+
+        <?php if ($isAdmin): ?>
+        <li>
+            <a href="<?= BASE_URL ?>/admin/categorias.php"
+               class="sidebar-link <?= $currentFile === 'categorias.php' ? 'active' : '' ?>">
+                <i class="bi bi-tags"></i>
+                <span>Categorias</span>
+            </a>
+        </li>
+        <li>
+            <a href="<?= BASE_URL ?>/admin/usuarios.php"
+               class="sidebar-link <?= $currentFile === 'usuarios.php' ? 'active' : '' ?>">
+                <i class="bi bi-people"></i>
+                <span>Usuários</span>
+            </a>
+        </li>
+        <li>
+            <a href="<?= BASE_URL ?>/admin/configuracoes.php"
+               class="sidebar-link <?= $currentFile === 'configuracoes.php' ? 'active' : '' ?>">
+                <i class="bi bi-gear"></i>
+                <span>Configurações</span>
+            </a>
+        </li>
+        <?php endif; ?>
 
         <li><div class="sidebar-divider"></div></li>
 
@@ -35,5 +60,6 @@ $menu = [
                 <span>Sair</span>
             </a>
         </li>
+
     </ul>
 </aside>

@@ -115,6 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             `twitter` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
             `website` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
             `active` tinyint(1) NOT NULL DEFAULT '1',
+            `consent` tinyint(1) NOT NULL DEFAULT '0',
             `views` int NOT NULL DEFAULT '0',
             `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
