@@ -12,11 +12,15 @@ include __DIR__ . '/includes/header.php';
 <?php
 /* ══ VISÃO ADMINISTRADOR / EDITOR ══════════════════════════════════════ */
 $totalResumes    = (int)db()->query("SELECT COUNT(*) FROM resumes")->fetchColumn();
-$totalPublished  = (int)db()->query("SELECT COUNT(*) FROM resumes WHERE active=1 AND consent=1")->fetchColumn();
+$totalPublished  = hasConsentColumn()
+    ? (int)db()->query("SELECT COUNT(*) FROM resumes WHERE active=1 AND consent=1")->fetchColumn()
+    : (int)db()->query("SELECT COUNT(*) FROM resumes WHERE active=1")->fetchColumn();
 $totalCategories = (int)db()->query("SELECT COUNT(*) FROM categories")->fetchColumn();
 $totalUsers      = (int)db()->query("SELECT COUNT(*) FROM users")->fetchColumn();
 $totalViews      = (int)(db()->query("SELECT SUM(views) FROM resumes")->fetchColumn() ?? 0);
-$pendingConsent  = (int)db()->query("SELECT COUNT(*) FROM resumes WHERE consent=0")->fetchColumn();
+$pendingConsent  = hasConsentColumn()
+    ? (int)db()->query("SELECT COUNT(*) FROM resumes WHERE consent=0")->fetchColumn()
+    : 0;
 
 $recentResumes = db()->query(
     "SELECT r.*, c.name AS category_name

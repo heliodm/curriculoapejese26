@@ -183,7 +183,7 @@ if (in_array($acao, ['novo', 'editar'])) {
     /* ── RENDERIZAÇÃO DO FORMULÁRIO ──────────────────────────────────── */
     $categories = getCategories();
     $allUsers   = $isAdmin ? db()->query("SELECT id, full_name, username FROM users ORDER BY full_name ASC")->fetchAll() : [];
-    $pageTitle  = ($editing ? 'Editar' : $isUser ? 'Meu' : 'Novo') . ' Currículo';
+    $pageTitle  = ($editing ? 'Editar' : ($isUser ? 'Meu' : 'Novo')) . ' Currículo';
 
     include __DIR__ . '/includes/header.php';
     ?>
