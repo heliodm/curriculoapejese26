@@ -93,9 +93,10 @@ a:hover { color: var(--secondary); }
 }
 .resume-card:hover { box-shadow: var(--shadow); transform: translateY(-3px); }
 
-.resume-card-photo { aspect-ratio: 1; overflow: hidden; background: #f0f2f8; text-align: center; }
-.resume-card-photo img { width: 100%; height: 100%; object-fit: cover; }
-.resume-card-placeholder { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; background: var(--primary-light); color: var(--primary); font-size: 3.5rem; }
+/* Proporção 354×472 px (portrait 3:4) */
+.resume-card-photo { aspect-ratio: 354 / 472; overflow: hidden; background: #f0f2f8; }
+.resume-card-photo img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.resume-card-placeholder { width: 100%; aspect-ratio: 354 / 472; display: flex; align-items: center; justify-content: center; background: var(--primary-light); color: var(--primary); font-size: 3.5rem; }
 
 .resume-card-body { padding: 1rem; flex: 1; }
 .resume-card-category { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--secondary); display: block; margin-bottom: .3rem; }
@@ -117,14 +118,22 @@ a:hover { color: var(--secondary); }
 
 .resume-photo-wrap { text-align: center; margin-bottom: 1.25rem; }
 .resume-photo {
-    width: 150px; height: 150px; border-radius: 50%; object-fit: cover;
-    border: 4px solid rgba(255,255,255,.35); box-shadow: 0 4px 20px rgba(0,0,0,.25);
+    /* 354×472 px — proporção portrait 3:4 */
+    width: 100%; max-width: 200px;
+    aspect-ratio: 354 / 472;
+    border-radius: 6px;
+    object-fit: cover; object-position: center top;
+    border: 3px solid rgba(255,255,255,.35);
+    box-shadow: 0 4px 20px rgba(0,0,0,.3);
+    display: block; margin: 0 auto;
 }
 .resume-photo-placeholder {
-    width: 150px; height: 150px; border-radius: 50%; margin: 0 auto;
+    width: 100%; max-width: 200px;
+    aspect-ratio: 354 / 472;
+    border-radius: 6px; margin: 0 auto;
     background: rgba(255,255,255,.15); display: flex; align-items: center;
     justify-content: center; font-size: 4rem; color: rgba(255,255,255,.6);
-    border: 4px solid rgba(255,255,255,.2);
+    border: 3px solid rgba(255,255,255,.2);
 }
 
 .resume-identity { text-align: center; margin-bottom: 1.5rem; }
@@ -212,7 +221,18 @@ a:hover { color: var(--secondary); }
 @media print {
     .no-print, .site-header, .site-footer, nav.breadcrumb, .resume-actions { display: none !important; }
     .resume-page { box-shadow: none !important; border: none !important; }
-    .resume-left { background: var(--primary) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #fff !important; }
+    .resume-left {
+        background: var(--primary) !important;
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        color: #fff !important;
+    }
+    /* Foto mantém proporção 354×472 na impressão */
+    .resume-photo,
+    .resume-photo-placeholder {
+        width: 120px !important;
+        aspect-ratio: 354 / 472 !important;
+        max-width: none !important;
+    }
     body { background: #fff; }
 }
 

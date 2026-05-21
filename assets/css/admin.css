@@ -192,14 +192,21 @@
 .admin-table tbody tr:hover td { background: rgba(27,58,107,.04); }
 
 .table-avatar {
-    width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
+    /* 354:472 em miniatura: ~32×43 px */
+    width: 32px;
+    aspect-ratio: 354 / 472;
+    border-radius: 4px;
+    object-fit: cover; object-position: center top;
     border: 2px solid var(--secondary);
+    vertical-align: middle;
 }
 .table-avatar-placeholder {
-    width: 40px; height: 40px; border-radius: 50%;
+    width: 32px;
+    aspect-ratio: 354 / 472;
+    border-radius: 4px;
     background: var(--primary-light);
     display: flex; align-items: center; justify-content: center;
-    color: var(--primary); font-size: 1.1rem;
+    color: var(--primary); font-size: .9rem;
 }
 
 .bg-primary-soft {
@@ -296,20 +303,30 @@
     font-family: Tahoma, sans-serif;
 }
 
-/* ===== Photo upload widget ===== */
-.photo-upload-wrap { min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.photo-placeholder {
-    width: 120px; height: 120px; border-radius: 50%;
-    border: 2px dashed var(--secondary);            /* #C9A227 */
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    cursor: pointer; color: #aaa; font-size: .75rem; gap: .3rem;
-    transition: border-color .18s, color .18s;
+/* ===== Photo upload widget — 354×472 portrait ===== */
+.photo-upload-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: .5rem;
 }
-.photo-placeholder i { font-size: 2rem; }
+.photo-placeholder {
+    /* 354:472 → escala de exibição: 100×133 px */
+    width: 100px;
+    aspect-ratio: 354 / 472;
+    border-radius: 6px;
+    border: 2px dashed var(--secondary);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; color: #aaa; font-size: .72rem; gap: .35rem; text-align: center;
+    padding: .5rem; transition: border-color .18s, color .18s;
+}
+.photo-placeholder i { font-size: 1.8rem; }
 .photo-placeholder:hover { border-color: var(--primary); color: var(--primary); }
 .photo-preview {
-    width: 120px; height: 120px; border-radius: 50%; object-fit: cover;
-    border: 3px solid var(--secondary); /* #C9A227 */
+    /* 354:472 → escala de exibição: 100×133 px */
+    width: 100px;
+    aspect-ratio: 354 / 472;
+    border-radius: 6px;
+    object-fit: cover; object-position: center top;
+    border: 3px solid var(--secondary);
 }
 
 /* ===== Logo preview ===== */
