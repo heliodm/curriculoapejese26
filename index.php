@@ -8,7 +8,10 @@ $perPage  = 12;
 
 $categories = getCategories();
 
-$where  = ['r.active = 1', 'r.consent = 1'];
+$where  = ['r.active = 1'];
+if (hasConsentColumn()) {
+    $where[] = 'r.consent = 1';
+}
 $params = [];
 
 if ($search !== '') {

@@ -4,10 +4,11 @@ require_once __DIR__ . '/config/config.php';
 $slug = sanitize($_GET['s'] ?? '');
 if (!$slug) redirect(BASE_URL . '/index.php');
 
+$consentSQL = hasConsentColumn() ? ' AND r.consent = 1' : '';
 $stmt = db()->prepare("SELECT r.*, c.name AS category_name
     FROM resumes r
     LEFT JOIN categories c ON c.id = r.category_id
-    WHERE r.slug = ? AND r.active = 1 AND r.consent = 1");
+    WHERE r.slug = ? AND r.active = 1{$consentSQL}");
 $stmt->execute([$slug]);
 $r = $stmt->fetch();
 

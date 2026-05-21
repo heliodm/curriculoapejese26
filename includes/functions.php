@@ -3,7 +3,7 @@ function e(string $value): string {
     return htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 }
 
-function sanitize(mixed $input): string {
+function sanitize($input): string {
     return trim(strip_tags((string)$input));
 }
 
@@ -22,9 +22,9 @@ function generateSlug(string $text): string {
 }
 
 function uniqueSlug(string $base, string $table, int $excludeId = 0): string {
-    $slug = generateSlug($base);
+    $slug     = generateSlug($base);
     $original = $slug;
-    $counter = 1;
+    $counter  = 1;
     while (true) {
         $stmt = db()->prepare("SELECT id FROM `{$table}` WHERE slug = ? AND id != ?");
         $stmt->execute([$slug, $excludeId]);
@@ -70,9 +70,10 @@ function renderFlash(): string {
     return $html;
 }
 
-function uploadFile(array $file, string $subdir, array $allowedTypes = [], int $maxSize = 0): string|false {
+/** @return string|false */
+function uploadFile(array $file, string $subdir, array $allowedTypes = [], int $maxSize = 0) {
     if ($file['error'] !== UPLOAD_ERR_OK) return false;
-    $maxSize = $maxSize ?: MAX_UPLOAD_SIZE;
+    $maxSize  = $maxSize ?: MAX_UPLOAD_SIZE;
     if ($file['size'] > $maxSize) return false;
     $finfo    = new finfo(FILEINFO_MIME_TYPE);
     $mimeType = $finfo->file($file['tmp_name']);
@@ -82,8 +83,7 @@ function uploadFile(array $file, string $subdir, array $allowedTypes = [], int $
     $filename = bin2hex(random_bytes(16)) . '.' . strtolower($ext);
     $destDir  = UPLOAD_DIR . trim($subdir, '/') . '/';
     if (!is_dir($destDir)) mkdir($destDir, 0755, true);
-    $destPath = $destDir . $filename;
-    if (!move_uploaded_file($file['tmp_name'], $destPath)) return false;
+    if (!move_uploaded_file($file['tmp_name'], $destDir . $filename)) return false;
     return trim($subdir, '/') . '/' . $filename;
 }
 
@@ -100,7 +100,7 @@ function getSetting(string $key, string $default = ''): string {
         $stmt->execute([$key]);
         $row = $stmt->fetch();
         return $row ? (string)$row['setting_value'] : $default;
-    } catch (Exception) {
+    } catch (\Exception $e) {
         return $default;
     }
 }
@@ -114,7 +114,7 @@ function getMenuItems(): array {
     try {
         $stmt = db()->query("SELECT * FROM menu_items WHERE active = 1 ORDER BY order_num ASC LIMIT 3");
         return $stmt->fetchAll();
-    } catch (Exception) {
+    } catch (\Exception $e) {
         return [];
     }
 }
@@ -123,8 +123,13 @@ function paginate(int $total, int $perPage, int $currentPage): array {
     $totalPages  = (int)ceil($total / $perPage);
     $currentPage = max(1, min($currentPage, $totalPages));
     $offset      = ($currentPage - 1) * $perPage;
-    return ['total' => $total, 'per_page' => $perPage, 'current' => $currentPage,
-            'total_pages' => $totalPages, 'offset' => $offset];
+    return [
+        'total'       => $total,
+        'per_page'    => $perPage,
+        'current'     => $currentPage,
+        'total_pages' => $totalPages,
+        'offset'      => $offset,
+    ];
 }
 
 function formatPhone(string $phone): string {
@@ -152,7 +157,24 @@ function getCategories(): array {
     try {
         $stmt = db()->query("SELECT * FROM categories WHERE active = 1 ORDER BY name ASC");
         return $stmt->fetchAll();
-    } catch (Exception) {
+    } catch (\Exception $e) {
         return [];
     }
+}
+
+/**
+ * Verifica se a coluna `consent` existe na tabela resumes.
+ * Retorna false em bancos instalados antes da migração v1.1.
+ */
+function hasConsentColumn(): bool {
+    static $result = null;
+    if ($result === null) {
+        try {
+            db()->query("SELECT consent FROM resumes LIMIT 0");
+            $result = true;
+        } catch (\Exception $e) {
+            $result = false;
+        }
+    }
+    return $result;
 }
