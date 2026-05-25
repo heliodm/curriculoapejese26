@@ -186,3 +186,162 @@ function ensureConsentColumn(): void {
         hasConsentColumn(true);
     }
 }
+
+/* ── Update / Deploy helpers ──────────────────────────────────────────── */
+
+function copyDirectory(string $src, string $dest, array $exclude = []): void {
+    $src = rtrim(str_replace('\\', '/', $src), '/');
+    $it  = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($src, RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST
+    );
+    foreach ($it as $item) {
+        $rel = ltrim(str_replace('\\', '/', substr($item->getPathname(), strlen($src))), '/');
+        foreach ($exclude as $ex) {
+            if (strncmp($rel, $ex, strlen($ex)) === 0) continue 2;
+        }
+        $dst = $dest . '/' . $rel;
+        if ($item->isDir()) {
+            if (!is_dir($dst)) mkdir($dst, 0755, true);
+        } else {
+            @copy($item->getPathname(), $dst);
+        }
+    }
+}
+
+function deleteDirectory(string $dir): void {
+    if (!is_dir($dir)) return;
+    $it = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST
+    );
+    foreach ($it as $item) {
+        $item->isDir() ? @rmdir($item->getPathname()) : @unlink($item->getPathname());
+    }
+    @rmdir($dir);
+}
+
+function performUpdate(): array {
+    $repo    = getSetting('github_repo', '');
+    $branch  = getSetting('github_branch', 'main');
+    $token   = getSetting('github_token', '');
+    $logsDir = SITE_ROOT . '/logs';
+    $logFile = $logsDir . '/updates.log';
+
+    if (empty($repo)) {
+        return ['success' => false, 'message' => 'Repositório GitHub não configurado. Acesse Configurações › GitHub.'];
+    }
+
+    if (!is_dir($logsDir)) mkdir($logsDir, 0755, true);
+
+    $tmpBase = sys_get_temp_dir() . '/curriculo_upd_' . time();
+    $zipFile = $tmpBase . '.zip';
+    $tmpDir  = $tmpBase . '_dir';
+
+    try {
+        $zipUrl = "https://github.com/{$repo}/archive/refs/heads/{$branch}.zip";
+
+        if (function_exists('curl_init')) {
+            $ch = curl_init($zipUrl);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_SSL_VERIFYPEER => true,
+                CURLOPT_USERAGENT      => 'CurriculoUpdateBot/1.0',
+                CURLOPT_TIMEOUT        => 120,
+                CURLOPT_HTTPHEADER     => $token ? ["Authorization: token {$token}"] : [],
+            ]);
+            $content  = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $err      = curl_error($ch);
+            curl_close($ch);
+            if ($err) throw new \Exception("cURL: {$err}");
+            if ($httpCode !== 200) throw new \Exception("GitHub retornou HTTP {$httpCode}. Verifique repositório e branch.");
+        } else {
+            $ctx = stream_context_create(['http' => [
+                'method'  => 'GET',
+                'header'  => "User-Agent: CurriculoUpdateBot/1.0\r\n" .
+                             ($token ? "Authorization: token {$token}\r\n" : ''),
+                'timeout' => 120,
+            ]]);
+            $content = @file_get_contents($zipUrl, false, $ctx);
+            if (!$content) throw new \Exception("Falha no download. Verifique o repositório, branch e a conexão do servidor.");
+        }
+
+        mkdir($tmpDir, 0755, true);
+        file_put_contents($zipFile, $content);
+        unset($content);
+
+        if (!class_exists('ZipArchive')) throw new \Exception("Extensão PHP ZipArchive não disponível no servidor.");
+        $zip = new ZipArchive();
+        if ($zip->open($zipFile) !== true) throw new \Exception("Falha ao abrir o arquivo zip baixado.");
+        $zip->extractTo($tmpDir);
+        $zip->close();
+        unlink($zipFile);
+
+        $dirs = glob($tmpDir . '/*', GLOB_ONLYDIR);
+        if (empty($dirs)) throw new \Exception("Estrutura do zip inesperada.");
+        $srcDir = $dirs[0];
+
+        $protected = [
+            'config/database.php',
+            'install.lock',
+            'assets/uploads',
+            'logs',
+            '.htaccess',
+        ];
+
+        copyDirectory($srcDir, SITE_ROOT, $protected);
+        deleteDirectory($tmpDir);
+
+        $stamp = date('Y-m-d H:i:s') . ' | ' . $repo . '@' . $branch;
+        file_put_contents(SITE_ROOT . '/version.txt', $stamp);
+        file_put_contents($logFile, '[' . date('Y-m-d H:i:s') . "] OK | {$repo}@{$branch}\n", FILE_APPEND);
+
+        return ['success' => true, 'message' => 'Atualização concluída com sucesso!', 'stamp' => $stamp];
+
+    } catch (\Exception $e) {
+        @unlink($zipFile);
+        deleteDirectory($tmpDir);
+        $errMsg = $e->getMessage();
+        file_put_contents($logFile, '[' . date('Y-m-d H:i:s') . "] ERRO | {$errMsg}\n", FILE_APPEND);
+        return ['success' => false, 'message' => $errMsg];
+    }
+}
+
+function githubLatestCommit(string $repo, string $branch, string $token = ''): array {
+    $url = "https://api.github.com/repos/{$repo}/commits/{$branch}";
+    $headers = "User-Agent: CurriculoUpdateBot/1.0\r\nAccept: application/vnd.github.v3+json\r\n";
+    if ($token) $headers .= "Authorization: token {$token}\r\n";
+
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_USERAGENT      => 'CurriculoUpdateBot/1.0',
+            CURLOPT_TIMEOUT        => 10,
+            CURLOPT_HTTPHEADER     => array_filter([
+                'Accept: application/vnd.github.v3+json',
+                $token ? "Authorization: token {$token}" : '',
+            ]),
+        ]);
+        $body = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+    } else {
+        $ctx  = stream_context_create(['http' => ['method' => 'GET', 'header' => $headers, 'timeout' => 10]]);
+        $body = @file_get_contents($url, false, $ctx);
+        $code = 200;
+    }
+
+    if (!$body) return ['error' => 'Não foi possível conectar à API do GitHub.'];
+    $data = json_decode($body, true);
+    if (isset($data['message'])) return ['error' => 'GitHub API: ' . $data['message']];
+    return [
+        'sha'     => substr($data['sha'] ?? '', 0, 7),
+        'author'  => $data['commit']['author']['name'] ?? '—',
+        'date'    => $data['commit']['author']['date'] ?? '',
+        'message' => $data['commit']['message'] ?? '—',
+    ];
+}

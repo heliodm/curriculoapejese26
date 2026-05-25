@@ -34,6 +34,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('success', 'Configurações gerais salvas.');
     }
 
+    if ($section === 'github') {
+        saveSetting('github_repo',           sanitize($_POST['github_repo']           ?? ''));
+        saveSetting('github_branch',         sanitize($_POST['github_branch']         ?? 'main'));
+        saveSetting('github_token',          sanitize($_POST['github_token']           ?? ''));
+        saveSetting('github_webhook_secret', sanitize($_POST['github_webhook_secret'] ?? ''));
+        flash('success', 'Configurações do GitHub salvas.');
+    }
+
     if ($section === 'menu') {
         $labels  = $_POST['menu_label']  ?? [];
         $urls    = $_POST['menu_url']    ?? [];
@@ -91,6 +99,11 @@ include __DIR__ . '/includes/header.php';
     <li class="nav-item">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabLogo">
             <i class="bi bi-image me-1"></i>Logo
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabGithub" id="tabGithubBtn">
+            <i class="bi bi-github me-1"></i>GitHub
         </button>
     </li>
 </ul>
@@ -228,9 +241,70 @@ include __DIR__ . '/includes/header.php';
             </div>
         </div>
     </div>
+
+    <!-- TAB GITHUB -->
+    <div class="tab-pane fade" id="tabGithub">
+        <div class="card admin-card">
+            <div class="card-header"><i class="bi bi-github me-2"></i>Repositório & Deploy Automático</div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    Configure o repositório GitHub de onde o sistema será atualizado.
+                    Após salvar, acesse <a href="<?= BASE_URL ?>/admin/atualizacao.php">Atualizações</a>
+                    para ver as instruções do webhook e atualizar manualmente.
+                </p>
+                <form method="POST">
+                    <?= csrfField() ?>
+                    <input type="hidden" name="section" value="github">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-medium">Repositório <span class="text-danger">*</span></label>
+                            <input type="text" name="github_repo" class="form-control"
+                                   placeholder="usuario/repositorio"
+                                   value="<?= e($settings['github_repo'] ?? '') ?>">
+                            <div class="form-text">Ex: <code>heliodm/curriculoapejese26</code></div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium">Branch</label>
+                            <input type="text" name="github_branch" class="form-control"
+                                   placeholder="main"
+                                   value="<?= e($settings['github_branch'] ?? 'main') ?>">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-medium">Token de Acesso (opcional)</label>
+                            <input type="password" name="github_token" class="form-control"
+                                   placeholder="ghp_xxxxxxxxxxxx"
+                                   value="<?= e($settings['github_token'] ?? '') ?>"
+                                   autocomplete="off">
+                            <div class="form-text">Necessário para repositórios privados ou para evitar limite de taxa da API.</div>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-medium">Segredo do Webhook</label>
+                            <input type="text" name="github_webhook_secret" class="form-control"
+                                   value="<?= e($settings['github_webhook_secret'] ?? '') ?>"
+                                   autocomplete="off" placeholder="Ex: uma-frase-secreta-longa">
+                            <div class="form-text">Use o mesmo valor ao cadastrar o webhook no GitHub (campo <em>Secret</em>).</div>
+                        </div>
+                    </div>
+                    <div class="mt-3 d-flex gap-2 align-items-center">
+                        <button type="submit" class="btn btn-primary-custom">
+                            <i class="bi bi-check-lg me-1"></i>Salvar
+                        </button>
+                        <a href="<?= BASE_URL ?>/admin/atualizacao.php" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-repeat me-1"></i>Ir para Atualizações
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
+// Auto-open GitHub tab if URL hash matches
+if (window.location.hash === '#tabGithub') {
+    document.getElementById('tabGithubBtn')?.click();
+}
+
 document.getElementById('logoInput').addEventListener('change', function() {
     const file = this.files[0];
     if (!file) return;

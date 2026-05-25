@@ -44,6 +44,13 @@ $isAdmin     = in_array($role, ['admin', 'editor']);
                 <span>Configurações</span>
             </a>
         </li>
+        <li>
+            <a href="<?= BASE_URL ?>/admin/atualizacao.php"
+               class="sidebar-link <?= $currentFile === 'atualizacao.php' ? 'active' : '' ?>">
+                <i class="bi bi-arrow-repeat"></i>
+                <span>Atualizações</span>
+            </a>
+        </li>
         <?php endif; ?>
 
         <li><div class="sidebar-divider"></div></li>
