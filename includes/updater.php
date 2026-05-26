@@ -62,16 +62,35 @@ function upd_checkGithub(bool $force = false): array {
         $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $err  = curl_error($ch);
         curl_close($ch);
-        if ($err)        return $fail("cURL: {$err}");
-        if ($code !== 200) return $fail("GitHub API retornou HTTP {$code}.");
+        if ($err) return $fail("cURL: {$err}");
+        if ($code !== 200) {
+            $errData = json_decode((string)$body, true);
+            $ghMsg   = $errData['message'] ?? "HTTP {$code}";
+            if ($code === 404 && !$token) {
+                $ghMsg .= ' — se o repositório for privado, configure um Token de acesso nas Configurações.';
+            }
+            return $fail("GitHub: {$ghMsg}");
+        }
     } elseif (ini_get('allow_url_fopen')) {
         $ctx  = stream_context_create(['http' => [
-            'method'  => 'GET',
-            'header'  => implode("\r\n", $hdrs),
-            'timeout' => 10,
+            'method'           => 'GET',
+            'header'           => implode("\r\n", $hdrs),
+            'timeout'          => 10,
+            'ignore_errors'    => true,
         ]]);
-        $body = @file_get_contents($url, false, $ctx);
-        if (!$body) return $fail('Falha ao conectar ao GitHub (allow_url_fopen).');
+        $body     = @file_get_contents($url, false, $ctx);
+        $respCode = 0;
+        if (isset($http_response_header) && preg_match('#HTTP/\S+ (\d+)#', $http_response_header[0], $m)) {
+            $respCode = (int)$m[1];
+        }
+        if (!$body || $respCode !== 200) {
+            $errData = json_decode((string)$body, true);
+            $ghMsg   = $errData['message'] ?? ($respCode ? "HTTP {$respCode}" : 'Falha ao conectar ao GitHub.');
+            if ($respCode === 404 && !$token) {
+                $ghMsg .= ' — se o repositório for privado, configure um Token de acesso nas Configurações.';
+            }
+            return $fail("GitHub: {$ghMsg}");
+        }
     } else {
         return $fail('cURL e allow_url_fopen indisponíveis no servidor.');
     }
