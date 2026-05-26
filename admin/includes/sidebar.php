@@ -45,10 +45,15 @@ $isAdmin     = in_array($role, ['admin', 'editor']);
             </a>
         </li>
         <li>
+            <?php $updInfo = upd_readVersion(); ?>
             <a href="<?= BASE_URL ?>/admin/atualizacao.php"
                class="sidebar-link <?= $currentFile === 'atualizacao.php' ? 'active' : '' ?>">
                 <i class="bi bi-arrow-repeat"></i>
                 <span>Atualizações</span>
+                <?php if (!empty($updInfo['update_available'])): ?>
+                <span class="badge rounded-pill ms-auto"
+                      style="background:var(--secondary);color:#fff;font-size:.65rem;padding:2px 6px;">Novo</span>
+                <?php endif; ?>
             </a>
         </li>
         <?php endif; ?>
