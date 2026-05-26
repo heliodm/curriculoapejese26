@@ -54,5 +54,6 @@ require_once SITE_ROOT . '/includes/functions.php';
 require_once SITE_ROOT . '/includes/updater.php';
 require_once SITE_ROOT . '/includes/auth.php';
 
-// Auto-migrate: add consent column if the database predates v1.1
-try { ensureConsentColumn(); } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
+// Auto-migrate: add missing columns to existing databases
+try { ensureConsentColumn();    } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
+try { ensureAdimplenteColumn(); } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }

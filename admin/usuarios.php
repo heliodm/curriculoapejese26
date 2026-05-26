@@ -26,6 +26,15 @@ if ($acao === 'toggle' && $id > 0) {
     redirect(BASE_URL . '/admin/usuarios.php');
 }
 
+// TOGGLE ADIMPLENTE
+if ($acao === 'toggle_adimplente' && $id > 0) {
+    if (verifyCsrf($_GET['csrf'] ?? '')) {
+        db()->prepare("UPDATE users SET adimplente = NOT adimplente WHERE id = ?")->execute([$id]);
+        flash('success', 'Situação financeira atualizada.');
+    }
+    redirect(BASE_URL . '/admin/usuarios.php');
+}
+
 $editing = null;
 if ($acao === 'editar' && $id > 0) {
     $stmt = db()->prepare("SELECT * FROM users WHERE id = ?");
@@ -44,9 +53,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username  = sanitize($_POST['username']  ?? '');
     $email     = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
     $role      = in_array($_POST['role'] ?? '', ['admin','editor','user']) ? $_POST['role'] : 'user';
-    $active    = isset($_POST['active']) ? 1 : 0;
-    $password  = $_POST['password'] ?? '';
-    $editId    = (int)($_POST['edit_id'] ?? 0);
+    $active      = isset($_POST['active'])      ? 1 : 0;
+    $adimplente  = isset($_POST['adimplente'])  ? 1 : 0;
+    $password    = $_POST['password'] ?? '';
+    $editId      = (int)($_POST['edit_id'] ?? 0);
 
     $errors = [];
     if (empty($full_name)) $errors[] = 'Nome completo é obrigatório.';
@@ -68,15 +78,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($editId > 0) {
-        $sql    = "UPDATE users SET full_name=?, username=?, email=?, role=?, active=?, updated_at=NOW()";
-        $params = [$full_name, $username, $email, $role, $active];
+        $sql    = "UPDATE users SET full_name=?, username=?, email=?, role=?, active=?, adimplente=?, updated_at=NOW()";
+        $params = [$full_name, $username, $email, $role, $active, $adimplente];
         if (!empty($password)) { $sql .= ", password=?"; $params[] = password_hash($password, PASSWORD_BCRYPT); }
         $sql .= " WHERE id=?"; $params[] = $editId;
         db()->prepare($sql)->execute($params);
         flash('success', 'Usuário atualizado com sucesso.');
     } else {
-        db()->prepare("INSERT INTO users (full_name, username, email, password, role, active) VALUES (?,?,?,?,?,?)")
-            ->execute([$full_name, $username, $email, password_hash($password, PASSWORD_BCRYPT), $role, $active]);
+        db()->prepare("INSERT INTO users (full_name, username, email, password, role, active, adimplente) VALUES (?,?,?,?,?,?,?)")
+            ->execute([$full_name, $username, $email, password_hash($password, PASSWORD_BCRYPT), $role, $active, $adimplente]);
         flash('success', 'Usuário criado com sucesso.');
     }
     redirect(BASE_URL . '/admin/usuarios.php');
@@ -147,11 +157,16 @@ include __DIR__ . '/includes/header.php';
                         </button>
                     </div>
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
+                <div class="col-md-2 d-flex align-items-end gap-3">
                     <div class="form-check mb-2">
                         <input type="checkbox" name="active" class="form-check-input" id="activeUser"
                                <?= (!isset($editing) || $editing['active']) ? 'checked' : '' ?>>
                         <label class="form-check-label" for="activeUser">Ativo</label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input type="checkbox" name="adimplente" class="form-check-input" id="adimplenteUser"
+                               <?= (!isset($editing) || ($editing['adimplente'] ?? 1)) ? 'checked' : '' ?>>
+                        <label class="form-check-label" for="adimplenteUser">Adimplente</label>
                     </div>
                 </div>
             </div>
@@ -180,6 +195,7 @@ include __DIR__ . '/includes/header.php';
                         <th>Currículos</th>
                         <th>Último Login</th>
                         <th>Status</th>
+                        <th>Situação</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -203,6 +219,13 @@ include __DIR__ . '/includes/header.php';
                             <?php endif; ?>
                         </td>
                         <td>
+                            <a href="?acao=toggle_adimplente&id=<?= $u['id'] ?>&csrf=<?= urlencode(csrfToken()) ?>"
+                               class="badge text-decoration-none <?= ($u['adimplente'] ?? 1) ? 'bg-success' : 'bg-danger' ?>"
+                               title="Clique para alternar">
+                                <?= ($u['adimplente'] ?? 1) ? 'Adimplente' : 'Inadimplente' ?>
+                            </a>
+                        </td>
+                        <td>
                             <a href="?acao=editar&id=<?= $u['id'] ?>" class="btn btn-xs btn-outline-primary me-1" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </a>
@@ -218,7 +241,7 @@ include __DIR__ . '/includes/header.php';
                     </tr>
                     <?php endforeach; ?>
                     <?php if (empty($users)): ?>
-                    <tr><td colspan="8" class="text-center text-muted py-4">Nenhum usuário cadastrado</td></tr>
+                    <tr><td colspan="9" class="text-center text-muted py-4">Nenhum usuário cadastrado</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>

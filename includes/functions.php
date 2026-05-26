@@ -187,6 +187,31 @@ function ensureConsentColumn(): void {
     }
 }
 
+function hasAdimplenteColumn(bool $reset = false): bool {
+    static $result = null;
+    if ($reset) $result = null;
+    if ($result === null) {
+        try {
+            db()->query("SELECT adimplente FROM users LIMIT 0");
+            $result = true;
+        } catch (\Exception $e) {
+            $result = false;
+        }
+    }
+    return $result;
+}
+
+function ensureAdimplenteColumn(): void {
+    if (!hasAdimplenteColumn()) {
+        try {
+            db()->exec("ALTER TABLE users ADD COLUMN `adimplente` TINYINT(1) NOT NULL DEFAULT 1 AFTER `active`");
+        } catch (\Exception $e) {
+            // Column added by concurrent request — ignore.
+        }
+        hasAdimplenteColumn(true);
+    }
+}
+
 /* ── Update / Deploy helpers ──────────────────────────────────────────── */
 
 function copyDirectory(string $src, string $dest, array $exclude = []): void {

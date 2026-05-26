@@ -9,9 +9,8 @@ $perPage  = 12;
 $categories = getCategories();
 
 $where  = ['r.active = 1'];
-if (hasConsentColumn()) {
-    $where[] = 'r.consent = 1';
-}
+if (hasConsentColumn())    $where[] = 'r.consent = 1';
+if (hasAdimplenteColumn()) $where[] = '(u.adimplente = 1 OR r.user_id IS NULL)';
 $params = [];
 
 if ($search !== '') {
@@ -28,7 +27,7 @@ if ($catId > 0) {
 
 $whereSQL = 'WHERE ' . implode(' AND ', $where);
 
-$totalStmt = db()->prepare("SELECT COUNT(*) FROM resumes r $whereSQL");
+$totalStmt = db()->prepare("SELECT COUNT(*) FROM resumes r LEFT JOIN users u ON u.id = r.user_id $whereSQL");
 $totalStmt->execute($params);
 $total = (int)$totalStmt->fetchColumn();
 
@@ -39,6 +38,7 @@ $params[] = $pag['offset'];
 $stmt = db()->prepare("SELECT r.*, c.name AS category_name
     FROM resumes r
     LEFT JOIN categories c ON c.id = r.category_id
+    LEFT JOIN users u ON u.id = r.user_id
     $whereSQL
     ORDER BY r.name ASC
     LIMIT ? OFFSET ?");
