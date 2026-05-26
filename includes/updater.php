@@ -44,8 +44,8 @@ function upd_checkGithub(bool $force = false): array {
 
     if (empty($repo)) return $fail('Repositório não configurado. Acesse Configurações › GitHub.');
 
-    $url  = "https://api.github.com/repos/{$repo}/commits/{$branch}";
-    $hdrs = ['Accept: application/vnd.github.v3+json'];
+    $url  = "https://api.github.com/repos/{$repo}/commits?" . http_build_query(['sha' => $branch, 'per_page' => 1]);
+    $hdrs = ['Accept: application/vnd.github.v3+json', 'User-Agent: CurriculoUpdateBot/1.0'];
     if ($token) $hdrs[] = "Authorization: token {$token}";
 
     $body = null;
@@ -79,11 +79,15 @@ function upd_checkGithub(bool $force = false): array {
     $data = json_decode($body, true);
     if (isset($data['message'])) return $fail('GitHub: ' . $data['message']);
 
-    $latest = substr($data['sha'] ?? '', 0, 7);
+    // List endpoint returns an array; grab the first (most recent) commit
+    $commit = is_array($data) && isset($data[0]) ? $data[0] : null;
+    if (!$commit) return $fail('Nenhum commit encontrado para o branch "' . $branch . '".');
+
+    $latest = substr($commit['sha'] ?? '', 0, 7);
     $v['latest_commit']  = $latest;
-    $v['latest_date']    = $data['commit']['author']['date'] ?? '';
-    $v['latest_message'] = $data['commit']['message'] ?? '';
-    $v['latest_author']  = $data['commit']['author']['name'] ?? '';
+    $v['latest_date']    = $commit['commit']['author']['date'] ?? '';
+    $v['latest_message'] = $commit['commit']['message'] ?? '';
+    $v['latest_author']  = $commit['commit']['author']['name'] ?? '';
     $v['api_error']      = '';
     $v['checked_at']     = date('Y-m-d H:i:s');
 
