@@ -43,12 +43,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $branch = preg_replace('/[^a-zA-Z0-9\/_\-\.]/', '', trim($_POST['branch'] ?? ''));
         $repo   = sanitize($_POST['github_repo'] ?? '');
 
-        if ($repo)   saveSetting('github_repo',   $repo);
-        if ($token !== null) saveSetting('github_token', $token);
+        saveSetting('github_repo',    $repo);
+        saveSetting('github_token',   $token);
         if ($branch) {
             saveSetting('github_branch', $branch);
             $v = upd_readVersion();
-            $v['branch'] = $branch;
+            $v['branch']     = $branch;
+            $v['api_error']  = '';
+            $v['checked_at'] = '';
             upd_writeVersion($v);
         }
         flash('success', 'Configurações salvas.');
@@ -324,8 +326,8 @@ include __DIR__ . '/includes/header.php';
                     <div class="mb-3">
                         <label class="form-label" style="font-size:.83rem;font-weight:700;color:var(--primary);">Branch do GitHub</label>
                         <input type="text" class="form-control form-control-sm" name="branch"
-                               value="<?= e($info['branch'] ?: getSetting('github_branch', 'main')) ?>"
-                               placeholder="main" maxlength="100">
+                               value="<?= e($info['branch'] ?: getSetting('github_branch', 'claude/resume-management-system-Aam95')) ?>"
+                               placeholder="claude/resume-management-system-Aam95" maxlength="100">
                         <div class="form-text" style="font-size:.73rem;">Branch a monitorar para atualizações</div>
                     </div>
 

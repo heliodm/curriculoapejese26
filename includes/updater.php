@@ -4,7 +4,7 @@ define('VERSION_FILE', SITE_ROOT . '/version.json');
 function upd_readVersion(): array {
     $defaults = [
         'commit'           => 'desconhecido',
-        'branch'           => getSetting('github_branch', 'main'),
+        'branch'           => getSetting('github_branch', 'claude/resume-management-system-Aam95'),
         'updated_at'       => '',
         'latest_commit'    => '',
         'latest_date'      => '',
@@ -207,7 +207,7 @@ function upd_executeUpdate(): array {
 
         echo "Copiando arquivos…\n";
         copyDirectory($dirs[0], SITE_ROOT, [
-            'config/database.php', 'install.lock', 'assets/uploads', 'logs', '.htaccess',
+            'config/database.php', 'install.lock', 'assets/uploads', 'logs', '.htaccess', 'version.json',
         ]);
         deleteDirectory($tmpDir);
 
