@@ -212,6 +212,22 @@ function ensureAdimplenteColumn(): void {
     }
 }
 
+function ensureUserProfileColumns(): void {
+    $cols = [
+        'matricula_apejese' => "VARCHAR(50) NULL DEFAULT NULL AFTER `adimplente`",
+        'cpf'               => "VARCHAR(14) NULL DEFAULT NULL AFTER `matricula_apejese`",
+        'data_nascimento'   => "DATE NULL DEFAULT NULL AFTER `cpf`",
+    ];
+    foreach ($cols as $col => $def) {
+        try {
+            db()->query("SELECT `{$col}` FROM users LIMIT 0");
+        } catch (\Exception $e) {
+            try { db()->exec("ALTER TABLE users ADD COLUMN `{$col}` {$def}"); }
+            catch (\Exception $ex) { /* concurrent */ }
+        }
+    }
+}
+
 /* ── Update / Deploy helpers ──────────────────────────────────────────── */
 
 function copyDirectory(string $src, string $dest, array $exclude = []): void {

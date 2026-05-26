@@ -49,14 +49,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('danger', 'Token de segurança inválido.');
         redirect(BASE_URL . '/admin/usuarios.php');
     }
-    $full_name = sanitize($_POST['full_name'] ?? '');
-    $username  = sanitize($_POST['username']  ?? '');
-    $email     = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
-    $role      = in_array($_POST['role'] ?? '', ['admin','editor','user']) ? $_POST['role'] : 'user';
-    $active      = isset($_POST['active'])      ? 1 : 0;
-    $adimplente  = isset($_POST['adimplente'])  ? 1 : 0;
-    $password    = $_POST['password'] ?? '';
-    $editId      = (int)($_POST['edit_id'] ?? 0);
+    $full_name         = sanitize($_POST['full_name']         ?? '');
+    $username          = sanitize($_POST['username']          ?? '');
+    $email             = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
+    $role              = in_array($_POST['role'] ?? '', ['admin','editor','user']) ? $_POST['role'] : 'user';
+    $active            = isset($_POST['active'])      ? 1 : 0;
+    $adimplente        = isset($_POST['adimplente'])  ? 1 : 0;
+    $matricula_apejese = sanitize($_POST['matricula_apejese'] ?? '');
+    $cpf               = preg_replace('/[^0-9.]/', '', sanitize($_POST['cpf'] ?? ''));
+    $data_nascimento   = sanitize($_POST['data_nascimento']   ?? '') ?: null;
+    $password          = $_POST['password'] ?? '';
+    $editId            = (int)($_POST['edit_id'] ?? 0);
 
     $errors = [];
     if (empty($full_name)) $errors[] = 'Nome completo é obrigatório.';
@@ -78,15 +81,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($editId > 0) {
-        $sql    = "UPDATE users SET full_name=?, username=?, email=?, role=?, active=?, adimplente=?, updated_at=NOW()";
-        $params = [$full_name, $username, $email, $role, $active, $adimplente];
+        $sql    = "UPDATE users SET full_name=?, username=?, email=?, role=?, active=?, adimplente=?, matricula_apejese=?, cpf=?, data_nascimento=?, updated_at=NOW()";
+        $params = [$full_name, $username, $email, $role, $active, $adimplente, $matricula_apejese, $cpf, $data_nascimento];
         if (!empty($password)) { $sql .= ", password=?"; $params[] = password_hash($password, PASSWORD_BCRYPT); }
         $sql .= " WHERE id=?"; $params[] = $editId;
         db()->prepare($sql)->execute($params);
         flash('success', 'Usuário atualizado com sucesso.');
     } else {
-        db()->prepare("INSERT INTO users (full_name, username, email, password, role, active, adimplente) VALUES (?,?,?,?,?,?,?)")
-            ->execute([$full_name, $username, $email, password_hash($password, PASSWORD_BCRYPT), $role, $active, $adimplente]);
+        db()->prepare("INSERT INTO users (full_name, username, email, password, role, active, adimplente, matricula_apejese, cpf, data_nascimento) VALUES (?,?,?,?,?,?,?,?,?,?)")
+            ->execute([$full_name, $username, $email, password_hash($password, PASSWORD_BCRYPT), $role, $active, $adimplente, $matricula_apejese, $cpf, $data_nascimento]);
         flash('success', 'Usuário criado com sucesso.');
     }
     redirect(BASE_URL . '/admin/usuarios.php');
@@ -169,6 +172,22 @@ include __DIR__ . '/includes/header.php';
                         <label class="form-check-label" for="adimplenteUser">Adimplente</label>
                     </div>
                 </div>
+                <div class="col-12"><hr class="my-1"><small class="text-muted fw-semibold">Dados APEJESE</small></div>
+                <div class="col-md-4">
+                    <label class="form-label">Matrícula APEJESE</label>
+                    <input type="text" name="matricula_apejese" class="form-control" maxlength="50"
+                           value="<?= e($editing['matricula_apejese'] ?? '') ?>" placeholder="Ex: 00123">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">CPF</label>
+                    <input type="text" name="cpf" class="form-control" maxlength="14"
+                           value="<?= e($editing['cpf'] ?? '') ?>" placeholder="000.000.000-00" id="cpfField">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Data de Nascimento</label>
+                    <input type="date" name="data_nascimento" class="form-control"
+                           value="<?= e($editing['data_nascimento'] ?? '') ?>">
+                </div>
             </div>
             <div class="mt-3 d-flex gap-2">
                 <button type="submit" class="btn btn-primary-custom">
@@ -189,8 +208,7 @@ include __DIR__ . '/includes/header.php';
                 <thead>
                     <tr>
                         <th>Nome</th>
-                        <th>Usuário</th>
-                        <th>E-mail</th>
+                        <th>Matrícula</th>
                         <th>Nível</th>
                         <th>Currículos</th>
                         <th>Último Login</th>
@@ -202,9 +220,13 @@ include __DIR__ . '/includes/header.php';
                 <tbody>
                     <?php foreach ($users as $u): ?>
                     <tr>
-                        <td class="fw-medium"><?= e($u['full_name']) ?></td>
-                        <td><code><?= e($u['username']) ?></code></td>
-                        <td><?= e($u['email']) ?></td>
+                        <td class="fw-medium">
+                            <?= e($u['full_name']) ?>
+                            <?php if ($u['cpf']): ?>
+                            <br><small class="text-muted"><?= e($u['cpf']) ?></small>
+                            <?php endif; ?>
+                        </td>
+                        <td><code class="small"><?= $u['matricula_apejese'] ? e($u['matricula_apejese']) : '<span class="text-muted">—</span>' ?></code></td>
                         <td><span class="badge <?= $roleBadges[$u['role']] ?? 'bg-secondary' ?>"><?= $roleLabels[$u['role']] ?? $u['role'] ?></span></td>
                         <td><?= $u['total_resumes'] ?></td>
                         <td class="text-muted small"><?= $u['last_login'] ? date('d/m/Y H:i', strtotime($u['last_login'])) : '—' ?></td>
@@ -241,7 +263,7 @@ include __DIR__ . '/includes/header.php';
                     </tr>
                     <?php endforeach; ?>
                     <?php if (empty($users)): ?>
-                    <tr><td colspan="9" class="text-center text-muted py-4">Nenhum usuário cadastrado</td></tr>
+                    <tr><td colspan="8" class="text-center text-muted py-4">Nenhum usuário cadastrado</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -255,6 +277,16 @@ function toggleField(fieldId, iconId) {
     const i = document.getElementById(iconId);
     if (f.type === 'password') { f.type = 'text'; i.className = 'bi bi-eye-slash'; }
     else { f.type = 'password'; i.className = 'bi bi-eye'; }
+}
+const cpfField = document.getElementById('cpfField');
+if (cpfField) {
+    cpfField.addEventListener('input', function () {
+        let v = this.value.replace(/\D/g, '').slice(0, 11);
+        if (v.length > 9) v = v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6,9)+'-'+v.slice(9);
+        else if (v.length > 6) v = v.slice(0,3)+'.'+v.slice(3,6)+'.'+v.slice(6);
+        else if (v.length > 3) v = v.slice(0,3)+'.'+v.slice(3);
+        this.value = v;
+    });
 }
 </script>
 
