@@ -55,6 +55,8 @@ require_once SITE_ROOT . '/includes/updater.php';
 require_once SITE_ROOT . '/includes/auth.php';
 
 // Auto-migrate: add missing columns to existing databases
-try { ensureConsentColumn();    } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
+try { ensureConsentColumn();       } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
 try { ensureAdimplenteColumn();    } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
-try { ensureUserProfileColumns(); } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
+try { ensureUserProfileColumns();  } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
+try { ensureUserExtendedColumns(); } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
+try { ensureLogTables();           } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }

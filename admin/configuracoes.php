@@ -42,6 +42,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('success', 'Configurações do GitHub salvas.');
     }
 
+    if ($section === 'email') {
+        saveSetting('mail_enabled',   isset($_POST['mail_enabled']) ? '1' : '0');
+        saveSetting('mail_from',      filter_var($_POST['mail_from'] ?? '', FILTER_SANITIZE_EMAIL));
+        saveSetting('mail_from_name', sanitize($_POST['mail_from_name'] ?? ''));
+        flash('success', 'Configurações de e-mail salvas.');
+    }
+
+    if ($section === 'carteira') {
+        saveSetting('carteira_cor_header',           sanitize($_POST['carteira_cor_header']           ?? '#1b3a6b'));
+        saveSetting('carteira_cor_acento',           sanitize($_POST['carteira_cor_acento']           ?? '#c9a227'));
+        saveSetting('carteira_mostrar_registro',     isset($_POST['carteira_mostrar_registro'])     ? '1' : '0');
+        saveSetting('carteira_mostrar_filiacao',     isset($_POST['carteira_mostrar_filiacao'])     ? '1' : '0');
+        flash('success', 'Configurações da carteira salvas.');
+    }
+
     if ($section === 'menu') {
         $labels  = $_POST['menu_label']  ?? [];
         $urls    = $_POST['menu_url']    ?? [];
@@ -104,6 +119,16 @@ include __DIR__ . '/includes/header.php';
     <li class="nav-item">
         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabGithub" id="tabGithubBtn">
             <i class="bi bi-github me-1"></i>GitHub
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabEmail" id="tabEmailBtn">
+            <i class="bi bi-envelope me-1"></i>E-mail
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabCarteira" id="tabCarteiraBtn">
+            <i class="bi bi-credit-card me-1"></i>Carteira
         </button>
     </li>
 </ul>
@@ -297,13 +322,129 @@ include __DIR__ . '/includes/header.php';
             </div>
         </div>
     </div>
+
+    <!-- TAB EMAIL -->
+    <div class="tab-pane fade" id="tabEmail">
+        <div class="card admin-card">
+            <div class="card-header"><i class="bi bi-envelope me-2"></i>Configurações de E-mail</div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    O sistema usa <code>mail()</code> do PHP. Certifique-se de que o servidor de hospedagem permite envio de e-mails.
+                </p>
+                <form method="POST">
+                    <?= csrfField() ?>
+                    <input type="hidden" name="section" value="email">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" name="mail_enabled" class="form-check-input" id="mailEnabled"
+                                       <?= getSetting('mail_enabled', '0') === '1' ? 'checked' : '' ?>>
+                                <label class="form-check-label fw-medium" for="mailEnabled">Habilitar envio de e-mails</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">E-mail de Envio (From)</label>
+                            <input type="email" name="mail_from" class="form-control"
+                                   value="<?= e(getSetting('mail_from', '')) ?>"
+                                   placeholder="noreply@apejese.org.br">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Nome de Exibição</label>
+                            <input type="text" name="mail_from_name" class="form-control" maxlength="100"
+                                   value="<?= e(getSetting('mail_from_name', 'APEJESE')) ?>"
+                                   placeholder="APEJESE">
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary-custom">
+                            <i class="bi bi-check-lg me-1"></i>Salvar E-mail
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB CARTEIRA -->
+    <div class="tab-pane fade" id="tabCarteira">
+        <div class="card admin-card">
+            <div class="card-header"><i class="bi bi-credit-card me-2"></i>Personalização da Carteira</div>
+            <div class="card-body">
+                <form method="POST">
+                    <?= csrfField() ?>
+                    <input type="hidden" name="section" value="carteira">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">Cor do Cabeçalho</label>
+                            <div class="input-group">
+                                <input type="color" name="carteira_cor_header" class="form-control form-control-color"
+                                       value="<?= e(getSetting('carteira_cor_header', '#1b3a6b')) ?>"
+                                       style="max-width:60px;">
+                                <input type="text" id="corHeaderText" class="form-control form-control-sm"
+                                       value="<?= e(getSetting('carteira_cor_header', '#1b3a6b')) ?>"
+                                       maxlength="7" pattern="#[0-9a-fA-F]{6}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">Cor de Acento (Dourado)</label>
+                            <div class="input-group">
+                                <input type="color" name="carteira_cor_acento" class="form-control form-control-color"
+                                       value="<?= e(getSetting('carteira_cor_acento', '#c9a227')) ?>"
+                                       style="max-width:60px;">
+                                <input type="text" id="corAcentoText" class="form-control form-control-sm"
+                                       value="<?= e(getSetting('carteira_cor_acento', '#c9a227')) ?>"
+                                       maxlength="7" pattern="#[0-9a-fA-F]{6}">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check mb-2">
+                                <input type="checkbox" name="carteira_mostrar_registro" class="form-check-input"
+                                       id="mostrarRegistro"
+                                       <?= getSetting('carteira_mostrar_registro', '1') === '1' ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="mostrarRegistro">Exibir Registro Profissional na carteira</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" name="carteira_mostrar_filiacao" class="form-check-input"
+                                       id="mostrarFiliacao"
+                                       <?= getSetting('carteira_mostrar_filiacao', '1') === '1' ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="mostrarFiliacao">Exibir Data de Filiação na carteira</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary-custom">
+                            <i class="bi bi-check-lg me-1"></i>Salvar Carteira
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-// Auto-open GitHub tab if URL hash matches
-if (window.location.hash === '#tabGithub') {
+// Auto-open tab via URL hash
+const tabMap = {
+    '#tabGithub':  'tabGithubBtn',
+    '#tabEmail':   'tabEmailBtn',
+    '#tabCarteira': 'tabCarteiraBtn',
+};
+if (tabMap[window.location.hash]) {
+    document.getElementById(tabMap[window.location.hash])?.click();
+} else if (window.location.hash === '#tabGithub') {
     document.getElementById('tabGithubBtn')?.click();
 }
+
+// Color pickers sync
+function syncColor(pickerId, textId) {
+    const picker = document.querySelector('[name="' + pickerId + '"]');
+    const text   = document.getElementById(textId);
+    if (!picker || !text) return;
+    picker.addEventListener('input', () => text.value = picker.value);
+    text.addEventListener('input', () => { if (/^#[0-9a-fA-F]{6}$/.test(text.value)) picker.value = text.value; });
+}
+syncColor('carteira_cor_header', 'corHeaderText');
+syncColor('carteira_cor_acento', 'corAcentoText');
 
 document.getElementById('logoInput').addEventListener('change', function() {
     const file = this.files[0];

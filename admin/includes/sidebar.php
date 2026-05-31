@@ -71,6 +71,20 @@ $isAdmin     = in_array($role, ['admin', 'editor']);
                 <?php endif; ?>
             </a>
         </li>
+        <li>
+            <a href="<?= BASE_URL ?>/admin/exportar.php"
+               class="sidebar-link <?= $currentFile === 'exportar.php' ? 'active' : '' ?>">
+                <i class="bi bi-download"></i>
+                <span>Exportar</span>
+            </a>
+        </li>
+        <li>
+            <a href="<?= BASE_URL ?>/admin/logs.php"
+               class="sidebar-link <?= $currentFile === 'logs.php' ? 'active' : '' ?>">
+                <i class="bi bi-journal-text"></i>
+                <span>Logs</span>
+            </a>
+        </li>
         <?php endif; ?>
 
         <li><div class="sidebar-divider"></div></li>

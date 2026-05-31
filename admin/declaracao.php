@@ -191,11 +191,18 @@ include __DIR__ . '/includes/header.php';
 
 <div class="admin-page-header">
     <h3><i class="bi bi-file-earmark-text me-2"></i>Declaração de Associado</h3>
-    <?php if (!$isAdminUser && $selectedUser): ?>
-    <a href="?user_id=<?= $myUserId ?>&imprimir=1" target="_blank" class="btn btn-primary-custom">
-        <i class="bi bi-download me-1"></i>Baixar / Imprimir PDF
-    </a>
-    <?php endif; ?>
+    <div class="d-flex gap-2">
+        <?php if (!$isAdminUser && $selectedUser): ?>
+        <a href="?user_id=<?= $myUserId ?>&imprimir=1" target="_blank" class="btn btn-primary-custom">
+            <i class="bi bi-download me-1"></i>Baixar / Imprimir PDF
+        </a>
+        <?php endif; ?>
+        <?php if ($isAdminUser): ?>
+        <a href="<?= BASE_URL ?>/admin/declaracao-lote.php" target="_blank" class="btn btn-outline-secondary">
+            <i class="bi bi-printer me-1"></i>Imprimir Lote
+        </a>
+        <?php endif; ?>
+    </div>
 </div>
 
 <?php if (!$isAdminUser): ?>

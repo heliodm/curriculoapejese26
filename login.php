@@ -74,6 +74,8 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
         </div>
         <div class="login-footer">
             <a href="<?= BASE_URL ?>/index.php"><i class="bi bi-arrow-left me-1"></i>Voltar ao site</a>
+            &nbsp;·&nbsp;
+            <a href="<?= BASE_URL ?>/esqueci-senha.php">Esqueci minha senha</a>
         </div>
     </div>
 </div>

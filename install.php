@@ -90,6 +90,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             `matricula_apejese` varchar(50) DEFAULT NULL,
             `cpf` varchar(14) DEFAULT NULL,
             `data_nascimento` date DEFAULT NULL,
+            `photo` varchar(255) DEFAULT NULL,
+            `data_filiacao` date DEFAULT NULL,
+            `registro_profissional` varchar(100) DEFAULT NULL,
+            `carteira_validade` date DEFAULT NULL,
             `last_login` timestamp NULL DEFAULT NULL,
             `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -141,6 +145,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
             `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `user_logs` (
+            `id` int NOT NULL AUTO_INCREMENT,
+            `user_id` int NULL,
+            `admin_id` int NULL,
+            `action` varchar(100) CHARACTER SET utf8mb4 NOT NULL,
+            `details` text CHARACTER SET utf8mb4 NULL,
+            `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`), KEY `user_id` (`user_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `password_resets` (
+            `id` int NOT NULL AUTO_INCREMENT,
+            `user_id` int NOT NULL,
+            `token` varchar(64) CHARACTER SET utf8mb4 NOT NULL,
+            `expires_at` timestamp NOT NULL,
+            `used` tinyint(1) NOT NULL DEFAULT 0,
+            `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `token` (`token`), KEY `user_id` (`user_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         $success[] = "Tabelas criadas com sucesso.";

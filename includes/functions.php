@@ -228,6 +228,63 @@ function ensureUserProfileColumns(): void {
     }
 }
 
+function ensureUserExtendedColumns(): void {
+    $cols = [
+        'photo'                 => "VARCHAR(255) NULL DEFAULT NULL AFTER `data_nascimento`",
+        'data_filiacao'         => "DATE NULL DEFAULT NULL AFTER `photo`",
+        'registro_profissional' => "VARCHAR(100) NULL DEFAULT NULL AFTER `data_filiacao`",
+        'carteira_validade'     => "DATE NULL DEFAULT NULL AFTER `registro_profissional`",
+    ];
+    foreach ($cols as $col => $def) {
+        try {
+            db()->query("SELECT `{$col}` FROM users LIMIT 0");
+        } catch (\Exception $e) {
+            try { db()->exec("ALTER TABLE users ADD COLUMN `{$col}` {$def}"); }
+            catch (\Exception $ex) { /* concurrent */ }
+        }
+    }
+}
+
+function ensureLogTables(): void {
+    db()->exec("CREATE TABLE IF NOT EXISTS `user_logs` (
+        `id` int NOT NULL AUTO_INCREMENT,
+        `user_id` int NULL, `admin_id` int NULL,
+        `action` varchar(100) CHARACTER SET utf8mb4 NOT NULL,
+        `details` text CHARACTER SET utf8mb4 NULL,
+        `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`id`), KEY `user_id` (`user_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    db()->exec("CREATE TABLE IF NOT EXISTS `password_resets` (
+        `id` int NOT NULL AUTO_INCREMENT,
+        `user_id` int NOT NULL,
+        `token` varchar(64) CHARACTER SET utf8mb4 NOT NULL,
+        `expires_at` timestamp NOT NULL,
+        `used` tinyint(1) NOT NULL DEFAULT 0,
+        `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `token` (`token`), KEY `user_id` (`user_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+
+function logUserAction(int $userId, string $action, string $details = ''): void {
+    try {
+        $adminId = !empty($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
+        db()->prepare("INSERT INTO user_logs (user_id, admin_id, action, details) VALUES (?,?,?,?)")
+            ->execute([$userId ?: null, $adminId, $action, $details]);
+    } catch (\Exception $e) { /* ignore */ }
+}
+
+function sendMail(string $to, string $toName, string $subject, string $htmlBody): bool {
+    if (!getSetting('mail_enabled', '0')) return false;
+    $from     = getSetting('mail_from', '');
+    $fromName = getSetting('mail_from_name', 'APEJESE');
+    if (!$from || !filter_var($from, FILTER_VALIDATE_EMAIL)) return false;
+    $headers  = "From: =?UTF-8?B?" . base64_encode($fromName) . "?= <{$from}>\r\n"
+              . "MIME-Version: 1.0\r\n"
+              . "Content-Type: text/html; charset=UTF-8";
+    return @mail($to, "=?UTF-8?B?" . base64_encode($subject) . "?=", $htmlBody, $headers);
+}
+
 /* ── Update / Deploy helpers ──────────────────────────────────────────── */
 
 function copyDirectory(string $src, string $dest, array $exclude = []): void {
