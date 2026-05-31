@@ -22,21 +22,22 @@ $isAdmin     = in_array($role, ['admin', 'editor']);
             </a>
         </li>
 
-        <?php if ($isAdmin): ?>
         <li>
             <a href="<?= BASE_URL ?>/admin/declaracao.php"
                class="sidebar-link <?= $currentFile === 'declaracao.php' ? 'active' : '' ?>">
                 <i class="bi bi-file-earmark-text"></i>
-                <span>Declarações</span>
+                <span><?= $isAdmin ? 'Declarações' : 'Minha Declaração' ?></span>
             </a>
         </li>
         <li>
             <a href="<?= BASE_URL ?>/admin/carteira.php"
                class="sidebar-link <?= $currentFile === 'carteira.php' ? 'active' : '' ?>">
                 <i class="bi bi-credit-card-2-front"></i>
-                <span>Carteira</span>
+                <span><?= $isAdmin ? 'Carteira' : 'Minha Carteira' ?></span>
             </a>
         </li>
+
+        <?php if ($isAdmin): ?>
         <li>
             <a href="<?= BASE_URL ?>/admin/categorias.php"
                class="sidebar-link <?= $currentFile === 'categorias.php' ? 'active' : '' ?>">

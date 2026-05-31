@@ -13,6 +13,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $username = sanitize($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
         if (login($username, $password)) {
+            // Non-admins land on their own declaration page
+            if (!isAdmin()) {
+                redirect(BASE_URL . '/admin/declaracao.php');
+            }
             redirect($redirect);
         } else {
             $error = 'Usuário ou senha incorretos.';
