@@ -258,6 +258,34 @@ $myResume = $stmt->fetch();
 </div>
 <?php endif; ?>
 
+<!-- Atalhos: Declaração e Carteira -->
+<div class="row g-3 mt-1">
+    <div class="col-md-6">
+        <a href="<?= BASE_URL ?>/admin/declaracao.php" class="text-decoration-none">
+            <div class="stat-card" style="cursor:pointer;">
+                <div class="stat-icon bg-primary-light"><i class="bi bi-file-earmark-text"></i></div>
+                <div class="stat-info">
+                    <div class="stat-value" style="font-size:1rem;">Declaração</div>
+                    <div class="stat-label">Visualizar e baixar PDF</div>
+                </div>
+                <i class="bi bi-arrow-right ms-auto text-muted"></i>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6">
+        <a href="<?= BASE_URL ?>/admin/carteira.php" class="text-decoration-none">
+            <div class="stat-card" style="cursor:pointer;">
+                <div class="stat-icon bg-secondary-light"><i class="bi bi-credit-card-2-front"></i></div>
+                <div class="stat-info">
+                    <div class="stat-value" style="font-size:1rem;">Carteira</div>
+                    <div class="stat-label">Visualizar e baixar PDF</div>
+                </div>
+                <i class="bi bi-arrow-right ms-auto text-muted"></i>
+            </div>
+        </a>
+    </div>
+</div>
+
 <?php endif; ?>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>
