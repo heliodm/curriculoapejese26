@@ -87,6 +87,14 @@ $isAdmin     = in_array($role, ['admin', 'editor']);
         </li>
         <?php endif; ?>
 
+        <li>
+            <a href="<?= BASE_URL ?>/admin/perfil.php"
+               class="sidebar-link <?= $currentFile === 'perfil.php' ? 'active' : '' ?>">
+                <i class="bi bi-person-gear"></i>
+                <span>Meu Perfil</span>
+            </a>
+        </li>
+
         <li><div class="sidebar-divider"></div></li>
 
         <li>

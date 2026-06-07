@@ -152,90 +152,152 @@ $stmt = db()->prepare(
 );
 $stmt->execute([$_SESSION['user_id']]);
 $myResume = $stmt->fetch();
+
+$uStmt = db()->prepare("SELECT * FROM users WHERE id = ?");
+$uStmt->execute([$_SESSION['user_id']]);
+$myUser = $uStmt->fetch();
+
+$adimplente  = (int)($myUser['adimplente'] ?? 1);
+$cardValidade = !empty($myUser['carteira_validade'])
+    ? date('d/m/Y', strtotime($myUser['carteira_validade']))
+    : getSetting('carteira_validade', '');
+
+$photoUrl = $myUser['photo'] ? UPLOAD_URL . $myUser['photo'] : null;
+
+// Detect incomplete profile data
+$missingFields = [];
+if (empty($myUser['matricula_apejese'])) $missingFields[] = 'Matrícula APEJESE';
+if (empty($myUser['cpf']))               $missingFields[] = 'CPF';
 ?>
 
 <div class="admin-page-header">
-    <div>
-        <h3><i class="bi bi-person-circle me-2"></i>Meu Painel</h3>
-        <small class="text-muted">Bem-vindo, <?= e($_SESSION['full_name'] ?? '') ?>!</small>
+    <div class="d-flex align-items-center gap-3">
+        <?php if ($photoUrl): ?>
+        <img src="<?= e($photoUrl) ?>" alt="Foto"
+             style="width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid var(--primary);flex-shrink:0;">
+        <?php endif; ?>
+        <div>
+            <h3 class="mb-0"><i class="bi bi-person-circle me-2"></i>Meu Painel</h3>
+            <small class="text-muted">Bem-vindo(a), <?= e($_SESSION['full_name'] ?? '') ?>!</small>
+        </div>
     </div>
+    <a href="<?= BASE_URL ?>/admin/perfil.php" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-gear me-1"></i>Meu Perfil
+    </a>
 </div>
 
-<?php if ($myResume): ?>
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="stat-card">
-            <div class="stat-icon bg-primary-light"><i class="bi bi-eye"></i></div>
-            <div class="stat-info">
-                <div class="stat-value"><?= $myResume['views'] ?></div>
-                <div class="stat-label">Visualizações</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card">
-            <div class="stat-icon <?= $myResume['active'] ? 'bg-green-light' : 'bg-accent-light' ?>">
-                <i class="bi bi-circle<?= $myResume['active'] ? '-fill' : '' ?>"></i>
-            </div>
-            <div class="stat-info">
-                <div class="stat-value" style="font-size:1.1rem"><?= $myResume['active'] ? 'Ativo' : 'Inativo' ?></div>
-                <div class="stat-label">Status admin</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card">
-            <div class="stat-icon <?= ($myResume['consent'] ?? 0) ? 'bg-green-light' : 'bg-secondary-light' ?>">
-                <i class="bi bi-shield-<?= ($myResume['consent'] ?? 0) ? 'check' : 'exclamation' ?>"></i>
-            </div>
-            <div class="stat-info">
-                <div class="stat-value" style="font-size:1.1rem"><?= ($myResume['consent'] ?? 0) ? 'Sim' : 'Não' ?></div>
-                <div class="stat-label">Autorização</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card">
-            <div class="stat-icon <?= ($myResume['active'] && ($myResume['consent'] ?? 0)) ? 'bg-green-light' : 'bg-accent-light' ?>">
-                <i class="bi bi-globe"></i>
-            </div>
-            <div class="stat-info">
-                <div class="stat-value" style="font-size:1.1rem">
-                    <?= ($myResume['active'] && ($myResume['consent'] ?? 0)) ? 'Visível' : 'Oculto' ?>
-                </div>
-                <div class="stat-label">Site público</div>
-            </div>
-        </div>
-    </div>
+<!-- Alertas ──────────────────────────────────────────────────── -->
+<?php if (!$adimplente): ?>
+<div class="alert alert-danger d-flex align-items-center gap-2 mb-3">
+    <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0"></i>
+    <span>
+        Sua situação junto à APEJESE está como <strong>INADIMPLENTE</strong>.
+        Entre em contato com a secretaria para regularizar.
+    </span>
 </div>
+<?php endif; ?>
 
-<?php if (!($myResume['consent'] ?? 0)): ?>
+<?php if (!($myResume['consent'] ?? 0) && $myResume): ?>
 <div class="alert alert-warning d-flex align-items-center gap-2 mb-3">
     <i class="bi bi-shield-exclamation fs-5 flex-shrink-0"></i>
     <span>
         Você ainda não autorizou o uso da sua imagem e informações.
         <strong>Seu currículo não está visível no site público.</strong>
-        Edite seu currículo, role até a seção de Autorização e marque o checkbox.
+        <a href="<?= BASE_URL ?>/admin/curriculos.php?acao=editar&id=<?= $myResume['id'] ?>" class="alert-link ms-1">Editar currículo</a>
     </span>
 </div>
 <?php endif; ?>
 
-<div class="card admin-card">
+<?php if (!empty($missingFields)): ?>
+<div class="alert alert-info d-flex align-items-center gap-2 mb-3" style="font-size:.88rem;">
+    <i class="bi bi-info-circle fs-5 flex-shrink-0"></i>
+    <span>
+        Dados cadastrais incompletos: <strong><?= implode(', ', $missingFields) ?></strong>.
+        Entre em contato com a secretaria para atualizar seu cadastro.
+    </span>
+</div>
+<?php endif; ?>
+
+<!-- Stats ────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+    <!-- Situação financeira -->
+    <div class="col-6 col-md-3">
+        <div class="stat-card" style="border-left:3px solid <?= $adimplente ? '#28a745' : '#dc3545' ?>;">
+            <div class="stat-icon <?= $adimplente ? 'bg-green-light' : 'bg-accent-light' ?>">
+                <i class="bi bi-<?= $adimplente ? 'check-circle' : 'x-circle' ?>"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value" style="font-size:1rem;color:<?= $adimplente ? '#28a745' : '#dc3545' ?>;">
+                    <?= $adimplente ? 'Adimplente' : 'Inadimplente' ?>
+                </div>
+                <div class="stat-label">Situação</div>
+            </div>
+        </div>
+    </div>
+    <!-- Visualizações -->
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary-light"><i class="bi bi-eye"></i></div>
+            <div class="stat-info">
+                <div class="stat-value"><?= $myResume ? number_format($myResume['views']) : '0' ?></div>
+                <div class="stat-label">Visualizações</div>
+            </div>
+        </div>
+    </div>
+    <!-- Visibilidade pública -->
+    <div class="col-6 col-md-3">
+        <?php $isVisible = $myResume && $myResume['active'] && ($myResume['consent'] ?? 0) && $adimplente; ?>
+        <div class="stat-card">
+            <div class="stat-icon <?= $isVisible ? 'bg-green-light' : 'bg-accent-light' ?>">
+                <i class="bi bi-globe<?= $isVisible ? '2' : '' ?>"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value" style="font-size:1rem;"><?= $isVisible ? 'Visível' : 'Oculto' ?></div>
+                <div class="stat-label">Site público</div>
+            </div>
+        </div>
+    </div>
+    <!-- Validade da carteira -->
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon bg-secondary-light"><i class="bi bi-credit-card"></i></div>
+            <div class="stat-info">
+                <div class="stat-value" style="font-size:<?= $cardValidade ? '.9rem' : '1rem' ?>;">
+                    <?= $cardValidade ? e($cardValidade) : '—' ?>
+                </div>
+                <div class="stat-label">Validade Carteira</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Meu Currículo ────────────────────────────────────────────── -->
+<?php if ($myResume): ?>
+<div class="card admin-card mb-4">
     <div class="card-header"><i class="bi bi-file-person me-1"></i>Meu Currículo</div>
     <div class="card-body d-flex align-items-center gap-4 flex-wrap">
         <?php if ($myResume['photo']): ?>
         <img src="<?= UPLOAD_URL . e($myResume['photo']) ?>" class="table-avatar"
-             style="width:56px;border-radius:6px;">
+             style="width:56px;height:56px;border-radius:8px;object-fit:cover;">
         <?php endif; ?>
         <div class="flex-grow-1">
             <div class="fw-bold"><?= e($myResume['name']) ?></div>
             <div class="text-muted small"><?= e($myResume['profession'] ?? '') ?></div>
-            <div><span class="badge bg-primary-soft"><?= e($myResume['category_name'] ?? '') ?></span></div>
+            <div class="mt-1 d-flex gap-2 flex-wrap">
+                <span class="badge bg-primary-soft"><?= e($myResume['category_name'] ?? '') ?></span>
+                <span class="badge <?= $myResume['active'] ? 'bg-success' : 'bg-secondary' ?>">
+                    <?= $myResume['active'] ? 'Ativo' : 'Inativo' ?>
+                </span>
+                <span class="badge <?= ($myResume['consent'] ?? 0) ? 'bg-success' : 'bg-warning text-dark' ?>">
+                    <i class="bi bi-shield-<?= ($myResume['consent'] ?? 0) ? 'check' : 'exclamation' ?> me-1"></i>
+                    <?= ($myResume['consent'] ?? 0) ? 'Autorizado' : 'Autorização pendente' ?>
+                </span>
+            </div>
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <a href="<?= BASE_URL ?>/admin/curriculos.php?acao=editar&id=<?= $myResume['id'] ?>"
                class="btn btn-primary-custom btn-sm">
-                <i class="bi bi-pencil me-1"></i>Editar Currículo
+                <i class="bi bi-pencil me-1"></i>Editar
             </a>
             <a href="<?= BASE_URL ?>/curriculo.php?s=<?= e($myResume['slug']) ?>" target="_blank"
                class="btn btn-outline-secondary btn-sm">
@@ -246,7 +308,7 @@ $myResume = $stmt->fetch();
 </div>
 
 <?php else: ?>
-<div class="card admin-card text-center py-5">
+<div class="card admin-card text-center py-5 mb-4">
     <div class="card-body">
         <i class="bi bi-file-person display-1" style="color:var(--secondary)"></i>
         <h5 class="mt-3">Você ainda não tem um currículo</h5>
@@ -258,9 +320,51 @@ $myResume = $stmt->fetch();
 </div>
 <?php endif; ?>
 
-<!-- Atalhos: Declaração e Carteira -->
-<div class="row g-3 mt-1">
-    <div class="col-md-6">
+<!-- Meus Dados APEJESE ───────────────────────────────────────── -->
+<div class="card admin-card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-card-list me-1"></i>Meus Dados APEJESE</span>
+        <a href="<?= BASE_URL ?>/admin/perfil.php" class="btn btn-xs btn-outline-primary">
+            <i class="bi bi-pencil me-1"></i>Editar Perfil
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-sm-6 col-md-4">
+                <div class="text-muted" style="font-size:.72rem;text-transform:uppercase;font-weight:700;">Matrícula APEJESE</div>
+                <div class="fw-semibold"><?= $myUser['matricula_apejese'] ? e($myUser['matricula_apejese']) : '<span class="text-muted">—</span>' ?></div>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="text-muted" style="font-size:.72rem;text-transform:uppercase;font-weight:700;">CPF</div>
+                <div class="fw-semibold"><?= $myUser['cpf'] ? e($myUser['cpf']) : '<span class="text-muted">—</span>' ?></div>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="text-muted" style="font-size:.72rem;text-transform:uppercase;font-weight:700;">Data de Nascimento</div>
+                <div class="fw-semibold">
+                    <?= !empty($myUser['data_nascimento']) ? date('d/m/Y', strtotime($myUser['data_nascimento'])) : '<span class="text-muted">—</span>' ?>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="text-muted" style="font-size:.72rem;text-transform:uppercase;font-weight:700;">Data de Filiação</div>
+                <div class="fw-semibold">
+                    <?= !empty($myUser['data_filiacao']) ? date('d/m/Y', strtotime($myUser['data_filiacao'])) : '<span class="text-muted">—</span>' ?>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="text-muted" style="font-size:.72rem;text-transform:uppercase;font-weight:700;">Registro Profissional</div>
+                <div class="fw-semibold"><?= $myUser['registro_profissional'] ? e($myUser['registro_profissional']) : '<span class="text-muted">—</span>' ?></div>
+            </div>
+            <div class="col-sm-6 col-md-4">
+                <div class="text-muted" style="font-size:.72rem;text-transform:uppercase;font-weight:700;">Validade da Carteira</div>
+                <div class="fw-semibold"><?= $cardValidade ? e($cardValidade) : '<span class="text-muted">—</span>' ?></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Atalhos: Declaração, Carteira e Perfil ───────────────────── -->
+<div class="row g-3">
+    <div class="col-md-4">
         <a href="<?= BASE_URL ?>/admin/declaracao.php" class="text-decoration-none">
             <div class="stat-card" style="cursor:pointer;">
                 <div class="stat-icon bg-primary-light"><i class="bi bi-file-earmark-text"></i></div>
@@ -272,13 +376,25 @@ $myResume = $stmt->fetch();
             </div>
         </a>
     </div>
-    <div class="col-md-6">
+    <div class="col-md-4">
         <a href="<?= BASE_URL ?>/admin/carteira.php" class="text-decoration-none">
             <div class="stat-card" style="cursor:pointer;">
                 <div class="stat-icon bg-secondary-light"><i class="bi bi-credit-card-2-front"></i></div>
                 <div class="stat-info">
                     <div class="stat-value" style="font-size:1rem;">Carteira</div>
                     <div class="stat-label">Visualizar e baixar PDF</div>
+                </div>
+                <i class="bi bi-arrow-right ms-auto text-muted"></i>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="<?= BASE_URL ?>/admin/perfil.php" class="text-decoration-none">
+            <div class="stat-card" style="cursor:pointer;">
+                <div class="stat-icon" style="background:var(--accent-light,#f3ede0);"><i class="bi bi-person-gear" style="color:var(--secondary);"></i></div>
+                <div class="stat-info">
+                    <div class="stat-value" style="font-size:1rem;">Meu Perfil</div>
+                    <div class="stat-label">Editar dados e foto</div>
                 </div>
                 <i class="bi bi-arrow-right ms-auto text-muted"></i>
             </div>
