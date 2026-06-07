@@ -173,15 +173,7 @@ img { max-width: 100%; }
     margin-bottom: .6rem; line-height: 1.2;
 }
 
-.hero-title span { color: var(--secondary-light); }
-
 .hero-subtitle { font-size: 1rem; opacity: .82; margin-bottom: .6rem; font-weight: 400; }
-.hero-stat {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: .82rem; opacity: .7; margin-bottom: 1.6rem;
-    background: rgba(255,255,255,.1); padding: .3rem .8rem;
-    border-radius: 50px; border: 1px solid rgba(255,255,255,.15);
-}
 
 /* Search bar */
 .hero-search {
@@ -588,19 +580,6 @@ img { max-width: 100%; }
 .footer-inner a:hover { color: var(--secondary-light); }
 .footer-inner .footer-nav { display: flex; align-items: center; gap: 1.25rem; }
 
-/* ═══════════════════════════════════════════════════════════
-   LOGIN (kept from original)
-   ═══════════════════════════════════════════════════════════ */
-.login-page { background: linear-gradient(135deg, var(--primary) 0%, #2a5298 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-.login-wrapper { width: 100%; max-width: 420px; padding: 1rem; }
-.login-card { background: #fff; border-radius: 14px; box-shadow: 0 8px 40px rgba(0,0,0,.25); overflow: hidden; }
-.login-header { background: linear-gradient(135deg, var(--primary) 0%, #2a5298 100%); color: #fff; text-align: center; padding: 2rem 1.5rem 1.5rem; }
-.login-header h4 { margin: .5rem 0 .2rem; font-weight: 700; }
-.login-header p { opacity: .75; font-size: .85rem; margin: 0; }
-.login-logo { height: 50px; max-width: 160px; object-fit: contain; }
-.login-body { padding: 1.75rem; }
-.login-footer-bar { text-align: center; padding: 1rem; border-top: 1px solid #f0f2f8; font-size: .83rem; }
-.login-footer-bar a { color: var(--primary); text-decoration: none; }
 
 /* ═══════════════════════════════════════════════════════════
    ADMIN BUTTON HELPERS (used in admin pages)

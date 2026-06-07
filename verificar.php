@@ -28,33 +28,42 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Verificação de Associado — <?= e($siteName) ?></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <style>
-body { background: #f0f2f8; font-family: Arial, sans-serif; }
+*, *::before, *::after { box-sizing: border-box; }
+body {
+    background: #f0f2f8;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
 .verify-card {
-    max-width: 480px; margin: 60px auto; border-radius: 14px;
-    overflow: hidden; box-shadow: 0 6px 30px rgba(0,0,0,.15);
+    max-width: 480px; margin: 48px auto 80px; border-radius: 16px;
+    overflow: hidden; box-shadow: 0 8px 36px rgba(0,0,0,.14);
 }
 .verify-header {
-    background: linear-gradient(135deg, #1b3a6b, #0f2347);
-    padding: 22px; text-align: center; color: #fff;
+    background: linear-gradient(135deg, #0f2347, #1b3a6b);
+    padding: 24px; text-align: center; color: #fff;
 }
-.verify-header img { height: 50px; margin-bottom: 8px; }
-.verify-header h4 { font-size: 1rem; margin: 0; }
-.gold-bar { height: 4px; background: linear-gradient(90deg,#c9a227,#f0c845,#c9a227); }
+.verify-header img { height: 50px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto; }
+.verify-header h4 { font-size: 1rem; font-weight: 700; margin: 0; }
+.gold-bar { height: 3px; background: linear-gradient(90deg, #c9a227, #f0c845, #c9a227); }
 .verify-body { background: #fff; padding: 28px 24px; }
 .verify-status {
-    text-align: center; padding: 12px; border-radius: 10px;
-    font-size: 1.1rem; font-weight: 800; margin-bottom: 20px;
-    letter-spacing: 1px;
+    text-align: center; padding: 12px 16px; border-radius: 10px;
+    font-size: 1rem; font-weight: 800; margin-bottom: 20px; letter-spacing: .5px;
 }
 .adimplente   { background: #d4edda; color: #155724; border: 2px solid #28a745; }
 .inadimplente { background: #f8d7da; color: #721c24; border: 2px solid #dc3545; }
-.field-row { display: flex; gap: 16px; margin-bottom: 12px; }
-.field-label { font-size: .75rem; color: #888; text-transform: uppercase; font-weight: 700; }
-.field-val   { font-size: .95rem; font-weight: 600; color: #222; }
-.verify-footer { text-align: center; padding: 12px; font-size: .78rem; color: #888; background: #f8f9fa; }
+.field-row { display: flex; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.field-label { font-size: .7rem; color: #9da5be; text-transform: uppercase; font-weight: 700; letter-spacing: .06em; margin-bottom: 2px; }
+.field-val   { font-size: .92rem; font-weight: 600; color: #1a2035; }
+.verify-footer { text-align: center; padding: 14px; font-size: .78rem; color: #9da5be; background: #f8f9fc; border-top: 1px solid #eef0f6; }
+.verify-footer a { color: #1b3a6b; font-weight: 600; text-decoration: none; }
+.verify-footer a:hover { opacity: .75; }
 </style>
 </head>
 <body>
