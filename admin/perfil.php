@@ -35,8 +35,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect(BASE_URL . '/admin/perfil.php');
     }
 
-    // Handle photo upload
-    $photoPath = null;
+    // Handle photo upload / removal
+    $photoPath    = null;
+    $removePhoto  = !empty($_POST['remove_photo']);
+
     if (!empty($_FILES['photo']['name'])) {
         $uploaded = uploadFile($_FILES['photo'], 'usuarios');
         if ($uploaded) {
@@ -46,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if ($photoPath) {
+    if ($photoPath || $removePhoto) {
         $oldStmt = db()->prepare("SELECT photo FROM users WHERE id = ?");
         $oldStmt->execute([$myUserId]);
         $oldRow = $oldStmt->fetch();
@@ -56,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sql    = "UPDATE users SET full_name=?, email=?, updated_at=NOW()";
     $params = [$full_name, $email];
     if ($photoPath)        { $sql .= ", photo=?";    $params[] = $photoPath; }
+    elseif ($removePhoto)  { $sql .= ", photo=NULL"; }
     if (!empty($password)) { $sql .= ", password=?"; $params[] = password_hash($password, PASSWORD_BCRYPT); }
     $sql .= " WHERE id=?"; $params[] = $myUserId;
     db()->prepare($sql)->execute($params);
@@ -114,6 +117,12 @@ include __DIR__ . '/includes/header.php';
                                 <input type="file" name="photo" class="form-control form-control-sm" accept="image/*"
                                        style="max-width:280px;">
                                 <div class="form-text">JPG, PNG ou WebP — máx. 5MB</div>
+                                <?php if ($photoUrl): ?>
+                                <div class="form-check mt-1">
+                                    <input class="form-check-input" type="checkbox" name="remove_photo" id="removePhoto" value="1">
+                                    <label class="form-check-label text-danger small" for="removePhoto">Remover foto atual</label>
+                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <div class="col-md-8">

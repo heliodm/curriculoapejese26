@@ -79,6 +79,13 @@ $isAdmin     = in_array($role, ['admin', 'editor']);
             </a>
         </li>
         <li>
+            <a href="<?= BASE_URL ?>/admin/email-massa.php"
+               class="sidebar-link <?= $currentFile === 'email-massa.php' ? 'active' : '' ?>">
+                <i class="bi bi-envelope-paper"></i>
+                <span>E-mail em Massa</span>
+            </a>
+        </li>
+        <li>
             <a href="<?= BASE_URL ?>/admin/logs.php"
                class="sidebar-link <?= $currentFile === 'logs.php' ? 'active' : '' ?>">
                 <i class="bi bi-journal-text"></i>

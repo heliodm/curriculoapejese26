@@ -10,9 +10,14 @@ $assinante  = getSetting('declaracao_assinante', '');
 $cargo      = getSetting('declaracao_cargo', '');
 $local      = getSetting('declaracao_local', 'Aracaju/SE');
 
+$filtroAdimplente = sanitize($_GET['adimplente'] ?? 'todos');
+$whereAdimplente  = '';
+if ($filtroAdimplente === 'adimplentes')   $whereAdimplente = ' AND (adimplente = 1 OR adimplente IS NULL)';
+if ($filtroAdimplente === 'inadimplentes') $whereAdimplente = ' AND adimplente = 0';
+
 $users = db()->query(
     "SELECT id, full_name, cpf, matricula_apejese, adimplente, data_nascimento
-     FROM users WHERE active = 1 ORDER BY full_name ASC"
+     FROM users WHERE active = 1{$whereAdimplente} ORDER BY full_name ASC"
 )->fetchAll();
 
 // Use IntlDateFormatter for month name if available, else fallback
@@ -76,6 +81,14 @@ html, body { background: #f0f0f0; font-family: 'Times New Roman', Times, serif; 
 <div class="print-bar">
     <button onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
     <a href="<?= BASE_URL ?>/admin/declaracao.php">← Voltar</a>
+    <span style="margin-left:8px;">
+        <select onchange="location.href='?adimplente='+this.value"
+                style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:4px 8px;border-radius:4px;font-size:.8rem;">
+            <option value="todos"         <?= $filtroAdimplente==='todos'         ? 'selected':'' ?>>Todos</option>
+            <option value="adimplentes"   <?= $filtroAdimplente==='adimplentes'   ? 'selected':'' ?>>Adimplentes</option>
+            <option value="inadimplentes" <?= $filtroAdimplente==='inadimplentes' ? 'selected':'' ?>>Inadimplentes</option>
+        </select>
+    </span>
     <span style="margin-left:auto;opacity:.7;font-size:.85rem;"><?= count($users) ?> declaração(ões)</span>
 </div>
 <div class="page-wrap">

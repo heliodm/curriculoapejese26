@@ -11,6 +11,11 @@ $globalVal = getSetting('carteira_validade', '');
 $logoPath  = getSetting('logo', '');
 $logoUrl   = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-default.png';
 
+$filtroAdimplente = sanitize($_GET['adimplente'] ?? 'todos');
+$whereAdimplente  = '';
+if ($filtroAdimplente === 'adimplentes')   $whereAdimplente = ' AND (u.adimplente = 1 OR u.adimplente IS NULL)';
+if ($filtroAdimplente === 'inadimplentes') $whereAdimplente = ' AND u.adimplente = 0';
+
 $users = db()->query(
     "SELECT u.id, u.full_name, u.adimplente, u.matricula_apejese, u.cpf,
             u.data_nascimento, u.photo AS user_photo, u.data_filiacao,
@@ -18,7 +23,7 @@ $users = db()->query(
             r.photo AS resume_photo, r.profession, r.formation
      FROM users u
      LEFT JOIN resumes r ON r.user_id = u.id
-     WHERE u.active = 1
+     WHERE u.active = 1{$whereAdimplente}
      GROUP BY u.id
      ORDER BY u.full_name ASC"
 )->fetchAll();
@@ -99,6 +104,14 @@ html, body { background: #e8e8e8; font-family: Arial, Helvetica, sans-serif; fon
 <div class="print-bar">
     <button onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
     <a href="<?= BASE_URL ?>/admin/carteira.php">← Voltar</a>
+    <span style="margin-left:8px;">
+        <select onchange="location.href='?adimplente='+this.value"
+                style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:4px 8px;border-radius:4px;font-size:.8rem;">
+            <option value="todos"         <?= $filtroAdimplente==='todos'         ? 'selected':'' ?>>Todos</option>
+            <option value="adimplentes"   <?= $filtroAdimplente==='adimplentes'   ? 'selected':'' ?>>Adimplentes</option>
+            <option value="inadimplentes" <?= $filtroAdimplente==='inadimplentes' ? 'selected':'' ?>>Inadimplentes</option>
+        </select>
+    </span>
     <span style="margin-left:auto;opacity:.7;font-size:.85rem;"><?= count($users) ?> carteira(s)</span>
 </div>
 <div class="page-wrap">

@@ -269,9 +269,89 @@ function ensureLogTables(): void {
 function logUserAction(int $userId, string $action, string $details = ''): void {
     try {
         $adminId = !empty($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
-        db()->prepare("INSERT INTO user_logs (user_id, admin_id, action, details) VALUES (?,?,?,?)")
-            ->execute([$userId ?: null, $adminId, $action, $details]);
-    } catch (\Exception $e) { /* ignore */ }
+        $ip      = $_SERVER['REMOTE_ADDR'] ?? null;
+        db()->prepare("INSERT INTO user_logs (user_id, admin_id, action, details, ip) VALUES (?,?,?,?,?)")
+            ->execute([$userId ?: null, $adminId, $action, $details, $ip]);
+    } catch (\Exception $e) {
+        try {
+            $adminId = !empty($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
+            db()->prepare("INSERT INTO user_logs (user_id, admin_id, action, details) VALUES (?,?,?,?)")
+                ->execute([$userId ?: null, $adminId, $action, $details]);
+        } catch (\Exception $ex) {}
+    }
+}
+
+/* ── Rate Limiting ────────────────────────────────────────────────────── */
+
+function ensureRateLimitTable(): void {
+    db()->exec("CREATE TABLE IF NOT EXISTS `rate_limits` (
+        `id` int NOT NULL AUTO_INCREMENT,
+        `rate_key` varchar(150) NOT NULL,
+        `attempts` int NOT NULL DEFAULT 1,
+        `window_start` int NOT NULL,
+        `blocked_until` int NULL DEFAULT NULL,
+        PRIMARY KEY (`id`),
+        UNIQUE KEY `rate_key` (`rate_key`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+
+function ensureLogIpColumn(): void {
+    try { db()->query("SELECT ip FROM user_logs LIMIT 0"); }
+    catch (\Exception $e) {
+        try { db()->exec("ALTER TABLE user_logs ADD COLUMN `ip` varchar(45) NULL DEFAULT NULL AFTER `details`"); }
+        catch (\Exception $ex) {}
+    }
+}
+
+function rateLimitCheck(string $action, int $maxAttempts = 5, int $windowSecs = 300): bool {
+    $ip  = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $key = $action . ':' . $ip;
+    $now = time();
+    try {
+        $stmt = db()->prepare("SELECT id, attempts, window_start, blocked_until FROM rate_limits WHERE rate_key = ?");
+        $stmt->execute([$key]);
+        $row  = $stmt->fetch();
+        if ($row) {
+            if ($row['blocked_until'] && $row['blocked_until'] > $now) return false;
+            if ($row['window_start'] < $now - $windowSecs) {
+                db()->prepare("UPDATE rate_limits SET attempts=1, window_start=?, blocked_until=NULL WHERE id=?")
+                    ->execute([$now, $row['id']]);
+                return true;
+            }
+            $new    = (int)$row['attempts'] + 1;
+            $block  = ($new >= $maxAttempts) ? ($now + $windowSecs) : null;
+            db()->prepare("UPDATE rate_limits SET attempts=?, blocked_until=? WHERE id=?")
+                ->execute([$new, $block, $row['id']]);
+            return $new <= $maxAttempts;
+        } else {
+            db()->prepare("INSERT INTO rate_limits (rate_key, attempts, window_start) VALUES (?,1,?)")
+                ->execute([$key, $now]);
+            return true;
+        }
+    } catch (\Exception $e) {
+        return true;
+    }
+}
+
+function rateLimitClear(string $action): void {
+    $ip  = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $key = $action . ':' . $ip;
+    try { db()->prepare("DELETE FROM rate_limits WHERE rate_key = ?")->execute([$key]); }
+    catch (\Exception $e) {}
+}
+
+/* ── CPF Validation ───────────────────────────────────────────────────── */
+
+function validateCpf(string $cpf): bool {
+    $cpf = preg_replace('/\D/', '', $cpf);
+    if (strlen($cpf) !== 11 || preg_match('/^(\d)\1{10}$/', $cpf)) return false;
+    for ($t = 9; $t < 11; $t++) {
+        $sum = 0;
+        for ($i = 0; $i < $t; $i++) $sum += (int)$cpf[$i] * ($t + 1 - $i);
+        $r = (10 * $sum) % 11;
+        if ((int)$cpf[$t] !== ($r < 10 ? $r : 0)) return false;
+    }
+    return true;
 }
 
 function sendMail(string $to, string $toName, string $subject, string $htmlBody): bool {

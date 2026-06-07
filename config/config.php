@@ -60,3 +60,14 @@ try { ensureAdimplenteColumn();    } catch (\Exception $e) { /* DB not ready (e.
 try { ensureUserProfileColumns();  } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
 try { ensureUserExtendedColumns(); } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
 try { ensureLogTables();           } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
+try { ensureRateLimitTable();      } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
+try { ensureLogIpColumn();         } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
+
+// Probabilistic cleanup (~1% of requests): expired tokens, old logs, stale rate-limit rows
+if (mt_rand(1, 100) === 1) {
+    try {
+        db()->exec("DELETE FROM password_resets WHERE expires_at < NOW()");
+        db()->exec("DELETE FROM user_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 90 DAY)");
+        db()->exec("DELETE FROM rate_limits WHERE window_start < " . (time() - 86400) . " AND blocked_until IS NULL");
+    } catch (\Exception $e) {}
+}

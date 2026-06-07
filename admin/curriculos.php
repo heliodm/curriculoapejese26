@@ -13,8 +13,8 @@ if ($isUser) {
     $myResume = $s->fetch() ?: null;
 }
 
-$acao = sanitize($_GET['acao'] ?? 'listar');
-$id   = (int)($_GET['id'] ?? 0);
+$acao = sanitize($_GET['acao'] ?? ($_POST['acao'] ?? 'listar'));
+$id   = (int)($_GET['id'] ?? ($_POST['id'] ?? 0));
 
 /* ── Operações protegidas (somente admin/editor) ─────────────────────── */
 if ($isUser && in_array($acao, ['excluir', 'toggle'])) {
@@ -22,9 +22,9 @@ if ($isUser && in_array($acao, ['excluir', 'toggle'])) {
     redirect(BASE_URL . '/admin/curriculos.php');
 }
 
-// DELETE
-if ($acao === 'excluir' && $id > 0) {
-    if (!verifyCsrf($_GET['csrf'] ?? '')) { flash('danger', 'Token inválido.'); }
+// DELETE (POST only)
+if ($acao === 'excluir' && $id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verifyCsrf($_POST['csrf_token'] ?? '')) { flash('danger', 'Token inválido.'); }
     else {
         $stmt = db()->prepare("SELECT photo FROM resumes WHERE id = ?");
         $stmt->execute([$id]);
@@ -36,9 +36,9 @@ if ($acao === 'excluir' && $id > 0) {
     redirect(BASE_URL . '/admin/curriculos.php');
 }
 
-// TOGGLE ACTIVE (somente admin/editor)
-if ($acao === 'toggle' && $id > 0) {
-    if (verifyCsrf($_GET['csrf'] ?? '')) {
+// TOGGLE ACTIVE — POST only
+if ($acao === 'toggle' && $id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (verifyCsrf($_POST['csrf_token'] ?? '')) {
         db()->prepare("UPDATE resumes SET active = NOT active WHERE id = ?")->execute([$id]);
         flash('success', 'Status atualizado.');
     }
@@ -413,6 +413,10 @@ if (in_array($acao, ['novo', 'editar'])) {
                        class="btn btn-outline-secondary">
                         <i class="bi bi-eye me-1"></i>Ver Currículo
                     </a>
+                    <button type="button" class="btn btn-outline-secondary" id="copyLinkFormBtn"
+                            onclick="copyResFormLink()">
+                        <i class="bi bi-link-45deg me-1"></i>Copiar Link
+                    </button>
                     <?php endif; ?>
                     <?php if ($isAdmin): ?>
                     <a href="<?= BASE_URL ?>/admin/curriculos.php" class="btn btn-outline-secondary">Cancelar</a>
@@ -438,6 +442,20 @@ if (in_array($acao, ['novo', 'editar'])) {
         };
         reader.readAsDataURL(file);
     });
+
+    // Copy link
+    function copyResFormLink() {
+        <?php if ($editing): ?>
+        var url = '<?= addslashes(BASE_URL . '/curriculo.php?s=' . urlencode($editing['slug'])) ?>';
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(function () {
+                var btn = document.getElementById('copyLinkFormBtn');
+                btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Copiado!';
+                setTimeout(function () { btn.innerHTML = '<i class="bi bi-link-45deg me-1"></i>Copiar Link'; }, 2000);
+            });
+        } else { prompt('Copie o link:', url); }
+        <?php endif; ?>
+    }
 
     // Consent toggle
     document.getElementById('consentCheck').addEventListener('change', function () {
@@ -488,6 +506,7 @@ $stmt = db()->prepare(
      WHERE $whereSQL
      ORDER BY r.name ASC LIMIT ? OFFSET ?"
 );
+// updated_at column may not exist on very old installs — handled in query above
 $stmt->execute($params);
 $resumes = $stmt->fetchAll();
 
@@ -547,6 +566,7 @@ include __DIR__ . '/includes/header.php';
                         <th>Categoria</th>
                         <th>Views</th>
                         <th>Público</th>
+                        <th>Editado</th>
                         <th>Status</th>
                         <th>Ações</th>
                     </tr>
@@ -571,32 +591,49 @@ include __DIR__ . '/includes/header.php';
                                 <?= ($r['consent'] ?? 0) ? 'Autorizado' : 'Pendente' ?>
                             </span>
                         </td>
-                        <td>
-                            <a href="?acao=toggle&id=<?= $r['id'] ?>&csrf=<?= urlencode(csrfToken()) ?>"
-                               class="badge <?= $r['active'] ? 'bg-success' : 'bg-secondary' ?> text-decoration-none">
-                                <?= $r['active'] ? 'Ativo' : 'Inativo' ?>
-                            </a>
+                        <td class="text-muted small text-nowrap">
+                            <?= !empty($r['updated_at']) ? date('d/m/Y', strtotime($r['updated_at'])) : '—' ?>
                         </td>
                         <td>
+                            <form method="POST" class="d-inline" data-no-unsaved>
+                                <?= csrfField() ?>
+                                <input type="hidden" name="acao" value="toggle">
+                                <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                                <button type="submit"
+                                        class="badge border-0 <?= $r['active'] ? 'bg-success' : 'bg-secondary' ?>"
+                                        style="cursor:pointer;">
+                                    <?= $r['active'] ? 'Ativo' : 'Inativo' ?>
+                                </button>
+                            </form>
+                        </td>
+                        <td class="text-nowrap">
                             <a href="<?= BASE_URL ?>/curriculo.php?s=<?= e($r['slug']) ?>" target="_blank"
                                class="btn btn-xs btn-outline-secondary me-1" title="Ver">
                                 <i class="bi bi-eye"></i>
                             </a>
+                            <button type="button" class="btn btn-xs btn-outline-secondary me-1"
+                                    title="Copiar link"
+                                    onclick="copyResLink('<?= addslashes(BASE_URL . '/curriculo.php?s=' . urlencode($r['slug'])) ?>', this)">
+                                <i class="bi bi-link-45deg"></i>
+                            </button>
                             <a href="?acao=editar&id=<?= $r['id'] ?>"
                                class="btn btn-xs btn-outline-primary me-1" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <a href="?acao=excluir&id=<?= $r['id'] ?>&csrf=<?= urlencode(csrfToken()) ?>"
-                               class="btn btn-xs btn-outline-danger"
-                               onclick="return confirm('Excluir currículo de <?= e(addslashes($r['name'])) ?>?')"
-                               title="Excluir">
-                                <i class="bi bi-trash"></i>
-                            </a>
+                            <form method="POST" class="d-inline" data-no-unsaved
+                                  onsubmit="return confirm('Excluir currículo de <?= e(addslashes($r['name'])) ?>?')">
+                                <?= csrfField() ?>
+                                <input type="hidden" name="acao" value="excluir">
+                                <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                                <button type="submit" class="btn btn-xs btn-outline-danger" title="Excluir">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
                         </td>
                     </tr>
                     <?php endforeach; ?>
                     <?php if (empty($resumes)): ?>
-                    <tr><td colspan="8" class="text-center text-muted py-4">Nenhum currículo encontrado</td></tr>
+                    <tr><td colspan="9" class="text-center text-muted py-4">Nenhum currículo encontrado</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -617,4 +654,17 @@ include __DIR__ . '/includes/header.php';
     <?php endif; ?>
 </div>
 
+<script>
+function copyResLink(url, btn) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function () {
+            var orig = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check-lg"></i>';
+            setTimeout(function () { btn.innerHTML = orig; }, 1800);
+        });
+    } else {
+        prompt('Copie o link:', url);
+    }
+}
+</script>
 <?php include __DIR__ . '/includes/footer.php'; ?>

@@ -9,6 +9,8 @@ $redirect = sanitize($_GET['redirect'] ?? BASE_URL . '/admin/index.php');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
         $error = 'Token de segurança inválido. Recarregue a página.';
+    } elseif (!rateLimitCheck('login', 5, 300)) {
+        $error = 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.';
     } else {
         $username = sanitize($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';

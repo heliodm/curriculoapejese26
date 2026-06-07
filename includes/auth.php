@@ -12,6 +12,8 @@ function login(string $username, string $password): bool {
     $_SESSION['full_name'] = $user['full_name'];
     $_SESSION['role']      = $user['role'];
     db()->prepare("UPDATE users SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);
+    rateLimitClear('login');
+    logUserAction($user['id'], 'login', 'Login realizado. IP: ' . ($_SERVER['REMOTE_ADDR'] ?? '?'));
     return true;
 }
 

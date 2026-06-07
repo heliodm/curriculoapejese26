@@ -45,7 +45,11 @@ $stmt = db()->prepare("SELECT r.*, c.name AS category_name
 $stmt->execute($params);
 $resumes = $stmt->fetchAll();
 
-$pageTitle = getSetting('site_name', APP_NAME) . ' — Busca de Currículos';
+$pageTitle   = getSetting('site_name', APP_NAME) . ' — Busca de Currículos';
+$memberCount = 0;
+try {
+    $memberCount = (int)db()->query("SELECT COUNT(*) FROM users WHERE active = 1")->fetchColumn();
+} catch (\Exception $e) {}
 ?>
 <?php include __DIR__ . '/includes/header.php'; ?>
 
@@ -55,6 +59,9 @@ $pageTitle = getSetting('site_name', APP_NAME) . ' — Busca de Currículos';
         <div class="hero-content text-center">
             <h1 class="hero-title"><?= e(getSetting('hero_title', 'Encontre Profissionais')) ?></h1>
             <p class="hero-subtitle"><?= e(getSetting('hero_subtitle', 'Pesquise currículos por nome ou categoria profissional')) ?></p>
+            <?php if ($memberCount > 0): ?>
+            <p class="hero-stat"><i class="bi bi-people-fill me-1"></i><?= number_format($memberCount) ?> associado<?= $memberCount !== 1 ? 's' : '' ?> cadastrado<?= $memberCount !== 1 ? 's' : '' ?></p>
+            <?php endif; ?>
             <form method="GET" action="<?= BASE_URL ?>/index.php" class="search-form">
                 <div class="input-group input-group-lg search-group">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>

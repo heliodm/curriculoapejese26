@@ -24,5 +24,42 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?= BASE_URL ?>/assets/js/admin.js"></script>
+<script>
+(function () {
+    var forms = document.querySelectorAll('form[data-unsaved]');
+    if (!forms.length) {
+        // Auto-detect forms with inputs (exclude search/filter forms without data-no-unsaved)
+        forms = document.querySelectorAll('form:not([data-no-unsaved])');
+    }
+    forms.forEach(function (form) {
+        var dirty = false;
+        form.addEventListener('change', function () { dirty = true; });
+        form.addEventListener('input',  function () { dirty = true; });
+        form.addEventListener('submit', function () { dirty = false; });
+    });
+    window.addEventListener('beforeunload', function (e) {
+        var anyDirty = false;
+        document.querySelectorAll('form:not([data-no-unsaved])').forEach(function (f) {
+            // Only warn for forms that have visible inputs beyond hidden/submit
+            var hasInputs = f.querySelector('input:not([type=hidden]):not([type=submit]),textarea,select');
+            if (hasInputs && f._dirty) anyDirty = true;
+        });
+        document.querySelectorAll('form:not([data-no-unsaved])').forEach(function (f) {
+            if (f._dirty) anyDirty = true;
+        });
+        if (anyDirty) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+    document.querySelectorAll('form:not([data-no-unsaved])').forEach(function (form) {
+        var hasInputs = form.querySelector('input:not([type=hidden]):not([type=submit]),textarea,select');
+        if (!hasInputs) return;
+        form.addEventListener('change', function () { form._dirty = true; });
+        form.addEventListener('input',  function () { form._dirty = true; });
+        form.addEventListener('submit', function () { form._dirty = false; });
+    });
+})();
+</script>
 </body>
 </html>

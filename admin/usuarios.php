@@ -3,12 +3,12 @@ require_once dirname(__DIR__) . '/config/config.php';
 require_once __DIR__ . '/includes/auth_check.php';
 requireAdmin();
 
-$acao = sanitize($_GET['acao'] ?? 'listar');
-$id   = (int)($_GET['id'] ?? 0);
+$acao = sanitize($_GET['acao'] ?? ($_POST['acao'] ?? 'listar'));
+$id   = (int)($_GET['id'] ?? ($_POST['id'] ?? 0));
 
-// DELETE
-if ($acao === 'excluir' && $id > 0) {
-    if (!verifyCsrf($_GET['csrf'] ?? '')) { flash('danger', 'Token inválido.'); }
+// DELETE — POST only
+if ($acao === 'excluir' && $id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verifyCsrf($_POST['csrf_token'] ?? '')) { flash('danger', 'Token inválido.'); }
     elseif ($id === (int)$_SESSION['user_id']) { flash('danger', 'Não é possível excluir seu próprio usuário.'); }
     else {
         $u = db()->prepare("SELECT photo FROM users WHERE id = ?");
@@ -22,9 +22,9 @@ if ($acao === 'excluir' && $id > 0) {
     redirect(BASE_URL . '/admin/usuarios.php');
 }
 
-// TOGGLE ACTIVE
-if ($acao === 'toggle' && $id > 0) {
-    if (verifyCsrf($_GET['csrf'] ?? '') && $id !== (int)$_SESSION['user_id']) {
+// TOGGLE ACTIVE — POST only
+if ($acao === 'toggle' && $id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (verifyCsrf($_POST['csrf_token'] ?? '') && $id !== (int)$_SESSION['user_id']) {
         db()->prepare("UPDATE users SET active = NOT active WHERE id = ?")->execute([$id]);
         logUserAction($id, 'toggle_ativo', 'Status ativo alternado.');
         flash('success', 'Status atualizado.');
@@ -32,9 +32,9 @@ if ($acao === 'toggle' && $id > 0) {
     redirect(BASE_URL . '/admin/usuarios.php');
 }
 
-// TOGGLE ADIMPLENTE
-if ($acao === 'toggle_adimplente' && $id > 0) {
-    if (verifyCsrf($_GET['csrf'] ?? '')) {
+// TOGGLE ADIMPLENTE — POST only
+if ($acao === 'toggle_adimplente' && $id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (verifyCsrf($_POST['csrf_token'] ?? '')) {
         $stmt = db()->prepare("SELECT full_name, email, adimplente FROM users WHERE id = ?");
         $stmt->execute([$id]);
         $uRow = $stmt->fetch();
@@ -60,9 +60,9 @@ if ($acao === 'toggle_adimplente' && $id > 0) {
     redirect(BASE_URL . '/admin/usuarios.php');
 }
 
-// RESET SENHA
-if ($acao === 'reset_senha' && $id > 0) {
-    if (!verifyCsrf($_GET['csrf'] ?? '')) {
+// RESET SENHA — POST only
+if ($acao === 'reset_senha' && $id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
         flash('danger', 'Token inválido.');
     } else {
         $tempPass = bin2hex(random_bytes(6));
@@ -124,6 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'E-mail inválido.';
     if ($editId === 0 && empty($password)) $errors[] = 'Senha é obrigatória para novo usuário.';
     if (!empty($password) && strlen($password) < 6) $errors[] = 'Senha deve ter ao menos 6 caracteres.';
+    if (!empty($cpf) && !validateCpf($cpf)) $errors[] = 'CPF inválido. Verifique os dígitos.';
 
     if (empty($errors)) {
         $stmt = db()->prepare("SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?");
@@ -433,37 +434,55 @@ include __DIR__ . '/includes/header.php';
                         <td class="text-muted small"><?= $u['last_login'] ? date('d/m/Y H:i', strtotime($u['last_login'])) : '—' ?></td>
                         <td>
                             <?php if ($u['id'] !== (int)$_SESSION['user_id']): ?>
-                            <a href="?acao=toggle&id=<?= $u['id'] ?>&csrf=<?= urlencode(csrfToken()) ?>"
-                               class="badge <?= $u['active'] ? 'bg-success' : 'bg-secondary' ?> text-decoration-none">
-                                <?= $u['active'] ? 'Ativo' : 'Inativo' ?>
-                            </a>
+                            <form method="POST" class="d-inline" data-no-unsaved>
+                                <?= csrfField() ?>
+                                <input type="hidden" name="acao" value="toggle">
+                                <input type="hidden" name="id" value="<?= $u['id'] ?>">
+                                <button type="submit"
+                                        class="badge border-0 <?= $u['active'] ? 'bg-success' : 'bg-secondary' ?>"
+                                        style="cursor:pointer;" title="Clique para alternar">
+                                    <?= $u['active'] ? 'Ativo' : 'Inativo' ?>
+                                </button>
+                            </form>
                             <?php else: ?>
                             <span class="badge bg-success">Ativo</span>
                             <?php endif; ?>
                         </td>
                         <td>
-                            <a href="?acao=toggle_adimplente&id=<?= $u['id'] ?>&csrf=<?= urlencode(csrfToken()) ?>"
-                               class="badge text-decoration-none <?= ($u['adimplente'] ?? 1) ? 'bg-success' : 'bg-danger' ?>"
-                               title="Clique para alternar">
-                                <?= ($u['adimplente'] ?? 1) ? 'Adimplente' : 'Inadimplente' ?>
-                            </a>
+                            <form method="POST" class="d-inline" data-no-unsaved>
+                                <?= csrfField() ?>
+                                <input type="hidden" name="acao" value="toggle_adimplente">
+                                <input type="hidden" name="id" value="<?= $u['id'] ?>">
+                                <button type="submit"
+                                        class="badge border-0 <?= ($u['adimplente'] ?? 1) ? 'bg-success' : 'bg-danger' ?>"
+                                        style="cursor:pointer;" title="Clique para alternar situação">
+                                    <?= ($u['adimplente'] ?? 1) ? 'Adimplente' : 'Inadimplente' ?>
+                                </button>
+                            </form>
                         </td>
-                        <td>
+                        <td class="text-nowrap">
                             <a href="?acao=editar&id=<?= $u['id'] ?>" class="btn btn-xs btn-outline-primary me-1" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <a href="?acao=reset_senha&id=<?= $u['id'] ?>&csrf=<?= urlencode(csrfToken()) ?>"
-                               class="btn btn-xs btn-outline-warning me-1" title="Redefinir senha"
-                               onclick="return confirm('Redefinir senha de <?= e(addslashes($u['full_name'])) ?>?')">
-                                <i class="bi bi-key"></i>
-                            </a>
+                            <form method="POST" class="d-inline" data-no-unsaved
+                                  onsubmit="return confirm('Redefinir senha de <?= e(addslashes($u['full_name'])) ?>?')">
+                                <?= csrfField() ?>
+                                <input type="hidden" name="acao" value="reset_senha">
+                                <input type="hidden" name="id" value="<?= $u['id'] ?>">
+                                <button type="submit" class="btn btn-xs btn-outline-warning me-1" title="Redefinir senha">
+                                    <i class="bi bi-key"></i>
+                                </button>
+                            </form>
                             <?php if ($u['id'] !== (int)$_SESSION['user_id']): ?>
-                            <a href="?acao=excluir&id=<?= $u['id'] ?>&csrf=<?= urlencode(csrfToken()) ?>"
-                               class="btn btn-xs btn-outline-danger"
-                               onclick="return confirm('Excluir usuário <?= e(addslashes($u['full_name'])) ?>?')"
-                               title="Excluir">
-                                <i class="bi bi-trash"></i>
-                            </a>
+                            <form method="POST" class="d-inline" data-no-unsaved
+                                  onsubmit="return confirm('Excluir usuário <?= e(addslashes($u['full_name'])) ?>?')">
+                                <?= csrfField() ?>
+                                <input type="hidden" name="acao" value="excluir">
+                                <input type="hidden" name="id" value="<?= $u['id'] ?>">
+                                <button type="submit" class="btn btn-xs btn-outline-danger" title="Excluir">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
                             <?php endif; ?>
                         </td>
                     </tr>

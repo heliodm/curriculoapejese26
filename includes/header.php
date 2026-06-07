@@ -10,7 +10,15 @@ $menuItems = getMenuItems();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e($pageTitle ?? $siteName) ?></title>
-    <meta name="description" content="<?= e(getSetting('site_description', 'Sistema de Currículos')) ?>">
+    <meta name="description" content="<?= e($ogDescription ?? getSetting('site_description', 'Sistema de Currículos')) ?>">
+    <!-- Open Graph -->
+    <meta property="og:type"        content="<?= e($ogType ?? 'website') ?>">
+    <meta property="og:title"       content="<?= e($ogTitle ?? $pageTitle ?? $siteName) ?>">
+    <meta property="og:description" content="<?= e($ogDescription ?? getSetting('site_description', 'Sistema de Currículos')) ?>">
+    <meta property="og:url"         content="<?= e($ogUrl ?? BASE_URL . ($_SERVER['REQUEST_URI'] ?? '/')) ?>">
+    <?php if (!empty($ogImage)): ?>
+    <meta property="og:image"       content="<?= e($ogImage) ?>">
+    <?php endif; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">

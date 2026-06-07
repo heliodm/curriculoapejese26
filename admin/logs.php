@@ -3,6 +3,36 @@ require_once dirname(__DIR__) . '/config/config.php';
 require_once __DIR__ . '/includes/auth_check.php';
 requireAdmin();
 
+// CSV export
+if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+    $allLogs = db()->query(
+        "SELECT l.created_at, u.full_name AS user_name, l.action, l.details, l.ip, a.full_name AS admin_name
+         FROM user_logs l
+         LEFT JOIN users u ON u.id = l.user_id
+         LEFT JOIN users a ON a.id = l.admin_id
+         ORDER BY l.created_at DESC"
+    )->fetchAll();
+
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="logs_' . date('Y-m-d') . '.csv"');
+    header('Cache-Control: no-cache');
+    $out = fopen('php://output', 'w');
+    fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
+    fputcsv($out, ['Data/Hora', 'Usuário Afetado', 'Ação', 'Detalhes', 'IP', 'Executado por'], ';');
+    foreach ($allLogs as $row) {
+        fputcsv($out, [
+            $row['created_at'] ? date('d/m/Y H:i:s', strtotime($row['created_at'])) : '',
+            $row['user_name'] ?? '',
+            $row['action'],
+            $row['details'] ?? '',
+            $row['ip'] ?? '',
+            $row['admin_name'] ?? 'Sistema',
+        ], ';');
+    }
+    fclose($out);
+    exit;
+}
+
 $page    = max(1, (int)($_GET['p'] ?? 1));
 $perPage = 50;
 $busca   = sanitize($_GET['busca'] ?? '');
@@ -37,7 +67,8 @@ $total = (int)$countStmt->fetchColumn();
 $pag    = paginate($total, $perPage, $page);
 $params2 = array_merge($params, [$pag['offset'], $perPage]);
 $logStmt = db()->prepare(
-    "SELECT l.*, u.full_name AS user_name, a.full_name AS admin_name
+    "SELECT l.*, u.full_name AS user_name, a.full_name AS admin_name,
+            l.ip
      FROM user_logs l
      LEFT JOIN users u ON u.id = l.user_id
      LEFT JOIN users a ON a.id = l.admin_id
@@ -66,9 +97,14 @@ include __DIR__ . '/includes/header.php';
 
 <?= renderFlash() ?>
 
-<div class="admin-page-header">
-    <h3><i class="bi bi-journal-text me-2"></i>Logs de Atividade</h3>
-    <small class="text-muted"><?= number_format($total) ?> registro<?= $total !== 1 ? 's' : '' ?></small>
+<div class="admin-page-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+        <h3><i class="bi bi-journal-text me-2"></i>Logs de Atividade</h3>
+        <small class="text-muted"><?= number_format($total) ?> registro<?= $total !== 1 ? 's' : '' ?></small>
+    </div>
+    <a href="?export=csv" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-file-earmark-spreadsheet me-1"></i>Exportar CSV
+    </a>
 </div>
 
 <!-- Filtros -->
@@ -106,6 +142,7 @@ include __DIR__ . '/includes/header.php';
                         <th>Usuário Afetado</th>
                         <th>Ação</th>
                         <th>Detalhes</th>
+                        <th>IP</th>
                         <th>Executado por</th>
                     </tr>
                 </thead>
@@ -124,11 +161,12 @@ include __DIR__ . '/includes/header.php';
                             </span>
                         </td>
                         <td class="text-muted small"><?= $log['details'] ? e($log['details']) : '—' ?></td>
+                        <td class="text-muted small text-nowrap"><?= !empty($log['ip']) ? e($log['ip']) : '—' ?></td>
                         <td class="small"><?= $log['admin_name'] ? e($log['admin_name']) : '<span class="text-muted">Sistema</span>' ?></td>
                     </tr>
                     <?php endforeach; ?>
                     <?php if (empty($logs)): ?>
-                    <tr><td colspan="5" class="text-center text-muted py-4">Nenhum registro encontrado.</td></tr>
+                    <tr><td colspan="6" class="text-center text-muted py-4">Nenhum registro encontrado.</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>

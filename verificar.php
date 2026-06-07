@@ -65,10 +65,22 @@ body { background: #f0f2f8; font-family: Arial, sans-serif; }
     </div>
     <div class="gold-bar"></div>
     <div class="verify-body">
+        <!-- Search form always visible -->
+        <form method="GET" action="<?= BASE_URL ?>/verificar.php" class="mb-4">
+            <label class="form-label fw-semibold" style="font-size:.85rem;">Buscar por Matrícula</label>
+            <div class="input-group input-group-sm">
+                <input type="text" name="m" class="form-control"
+                       placeholder="Nº de matrícula APEJESE"
+                       value="<?= e($matricula) ?>" required>
+                <button class="btn btn-primary" type="submit" style="background:#1b3a6b;border-color:#1b3a6b;">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
         <?php if (!$matricula): ?>
-        <div class="alert alert-warning text-center">
-            <i class="bi bi-qr-code-scan fs-2 d-block mb-2"></i>
-            Acesse esta página via QR Code da carteira de associado.
+        <div class="alert alert-info text-center" style="font-size:.85rem;">
+            <i class="bi bi-qr-code-scan me-1"></i>
+            Informe a matrícula acima ou escaneie o QR Code da carteira de associado.
         </div>
         <?php elseif (!$user): ?>
         <div class="alert alert-danger text-center">

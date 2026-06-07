@@ -36,6 +36,8 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><span class="dropdown-item-text text-muted small"><?= e($_SESSION['username'] ?? '') ?> (<?= e($_SESSION['role'] ?? '') ?>)</span></li>
                     <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="<?= BASE_URL ?>/admin/perfil.php"><i class="bi bi-person-gear me-2"></i>Meu Perfil</a></li>
+                    <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>/logout.php"><i class="bi bi-box-arrow-right me-2"></i>Sair</a></li>
                 </ul>
             </div>
@@ -47,3 +49,31 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
     <?php include __DIR__ . '/sidebar.php'; ?>
     <main class="admin-main" id="adminMain">
         <div class="admin-content p-3 p-md-4">
+<?php
+$_breadcrumbMap = [
+    'index.php'         => 'Dashboard',
+    'curriculos.php'    => 'Currículos',
+    'declaracao.php'    => 'Declaração',
+    'carteira.php'      => 'Carteira',
+    'categorias.php'    => 'Categorias',
+    'usuarios.php'      => 'Usuários',
+    'configuracoes.php' => 'Configurações',
+    'atualizacao.php'   => 'Atualizações',
+    'exportar.php'      => 'Exportar',
+    'logs.php'          => 'Logs',
+    'perfil.php'        => 'Meu Perfil',
+    'email-massa.php'   => 'E-mail em Massa',
+    'carteira-lote.php' => 'Carteiras em Lote',
+    'declaracao-lote.php' => 'Declarações em Lote',
+];
+$_cf  = basename($_SERVER['PHP_SELF']);
+$_crumb = $_breadcrumbMap[$_cf] ?? null;
+if ($_crumb && $_cf !== 'index.php'):
+?>
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb" style="font-size:.82rem;">
+        <li class="breadcrumb-item"><a href="<?= BASE_URL ?>/admin/index.php">Dashboard</a></li>
+        <li class="breadcrumb-item active"><?= e($_crumb) ?></li>
+    </ol>
+</nav>
+<?php endif; ?>

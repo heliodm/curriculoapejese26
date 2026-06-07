@@ -9,6 +9,8 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
         $error = 'Token de segurança inválido. Recarregue a página.';
+    } elseif (!rateLimitCheck('reset', 3, 600)) {
+        $error = 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.';
     } else {
         $email = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
         if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {

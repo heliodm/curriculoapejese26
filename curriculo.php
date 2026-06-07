@@ -22,8 +22,13 @@ if (!$r) {
 // Increment views
 db()->prepare("UPDATE resumes SET views = views + 1 WHERE id = ?")->execute([$r['id']]);
 
-$curriculoUrl = BASE_URL . '/curriculo.php?s=' . urlencode($r['slug']);
-$pageTitle    = e($r['name']) . ' — ' . e(getSetting('site_name', APP_NAME));
+$curriculoUrl   = BASE_URL . '/curriculo.php?s=' . urlencode($r['slug']);
+$pageTitle      = $r['name'] . ' — ' . getSetting('site_name', APP_NAME);
+$ogType         = 'profile';
+$ogTitle        = $r['name'] . ($r['profession'] ? ' — ' . $r['profession'] : '');
+$ogDescription  = $r['about'] ? mb_substr(strip_tags($r['about']), 0, 160) : ($r['profession'] ?? getSetting('site_description', ''));
+$ogUrl          = $curriculoUrl;
+$ogImage        = $r['photo'] ? UPLOAD_URL . $r['photo'] : null;
 
 $socialNetworks = [
     'linkedin'  => ['icon' => 'bi-linkedin',   'label' => 'LinkedIn',   'prefix' => ''],
@@ -154,11 +159,62 @@ $socialNetworks = [
         <button class="btn btn-action-pdf" onclick="printResume()">
             <i class="bi bi-file-pdf me-2"></i>Gerar PDF
         </button>
+        <button class="btn btn-outline-secondary" onclick="copyLink()" id="copyLinkBtn">
+            <i class="bi bi-link-45deg me-2"></i>Copiar Link
+        </button>
         <a href="<?= BASE_URL ?>/index.php" class="btn btn-action-back">
             <i class="bi bi-arrow-left me-2"></i>Voltar
         </a>
     </div>
 </div>
+
+<?php
+// Related professionals — same category, excluding current
+if ($r['category_id']):
+    $consentSQL2 = hasConsentColumn()    ? ' AND r2.consent = 1' : '';
+    $adimpSQL2   = hasAdimplenteColumn() ? ' AND (u2.adimplente = 1 OR r2.user_id IS NULL)' : '';
+    $relStmt = db()->prepare(
+        "SELECT r2.name, r2.slug, r2.profession, r2.photo
+         FROM resumes r2
+         LEFT JOIN users u2 ON u2.id = r2.user_id
+         WHERE r2.category_id = ? AND r2.id != ? AND r2.active = 1{$consentSQL2}{$adimpSQL2}
+         ORDER BY RAND() LIMIT 3"
+    );
+    $relStmt->execute([$r['category_id'], $r['id']]);
+    $related = $relStmt->fetchAll();
+    if ($related):
+?>
+<div class="container pb-4 no-print">
+    <h5 class="fw-semibold mb-3" style="color:var(--primary);">
+        <i class="bi bi-people me-2"></i>Outros Profissionais em <?= e($r['category_name']) ?>
+    </h5>
+    <div class="row g-3">
+        <?php foreach ($related as $rel): ?>
+        <div class="col-md-4">
+            <a href="<?= BASE_URL ?>/curriculo.php?s=<?= urlencode($rel['slug']) ?>"
+               class="card text-decoration-none resume-card h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <?php if ($rel['photo']): ?>
+                    <img src="<?= UPLOAD_URL . e($rel['photo']) ?>" alt=""
+                         style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+                    <?php else: ?>
+                    <div style="width:44px;height:44px;border-radius:50%;background:#dde3ee;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <i class="bi bi-person-fill" style="color:#b0bcd4;font-size:1.2rem;"></i>
+                    </div>
+                    <?php endif; ?>
+                    <div>
+                        <div class="fw-semibold" style="font-size:.9rem;"><?= e($rel['name']) ?></div>
+                        <?php if ($rel['profession']): ?>
+                        <div class="text-muted" style="font-size:.78rem;"><?= e($rel['profession']) ?></div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; endif; ?>
 
 <!-- QR Code Modal -->
 <div class="modal fade" id="qrModal" tabindex="-1">
@@ -191,6 +247,20 @@ function showQRCode() {
 }
 function printResume() {
     window.print();
+}
+function copyLink() {
+    var url = '<?= addslashes($curriculoUrl) ?>';
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function () {
+            var btn = document.getElementById('copyLinkBtn');
+            btn.innerHTML = '<i class="bi bi-check-lg me-2"></i>Link Copiado!';
+            setTimeout(function () {
+                btn.innerHTML = '<i class="bi bi-link-45deg me-2"></i>Copiar Link';
+            }, 2000);
+        });
+    } else {
+        prompt('Copie o link:', url);
+    }
 }
 </script>
 
