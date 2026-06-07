@@ -39,6 +39,7 @@ $socialNetworks = [
 ?>
 <?php include __DIR__ . '/includes/header.php'; ?>
 
+<main class="main-content">
 <div class="container py-4">
 
     <!-- Breadcrumb -->
@@ -232,6 +233,8 @@ if ($r['category_id']):
     </div>
 </div>
 <?php endif; endif; ?>
+
+</main>
 
 <!-- QR Code Modal -->
 <div class="modal fade" id="qrModal" tabindex="-1">
