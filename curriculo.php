@@ -44,14 +44,14 @@ $socialNetworks = [
 
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-3">
-        <ol class="breadcrumb" style="font-size:.82rem;">
+        <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="<?= BASE_URL ?>/index.php"><i class="bi bi-house me-1"></i>Início</a></li>
             <?php if ($r['category_name']): ?>
             <li class="breadcrumb-item">
                 <a href="<?= BASE_URL ?>/index.php?categoria=<?= $r['category_id'] ?>"><?= e($r['category_name']) ?></a>
             </li>
             <?php endif; ?>
-            <li class="breadcrumb-item active"><?= e($r['name']) ?></li>
+            <li class="breadcrumb-item active" aria-current="page"><?= e($r['name']) ?></li>
         </ol>
     </nav>
 

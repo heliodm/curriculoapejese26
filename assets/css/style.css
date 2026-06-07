@@ -154,6 +154,7 @@ img { max-width: 100%; }
     border-radius: 50%;
     bottom: 20px; left: -80px;
     pointer-events: none;
+    z-index: 0;
 }
 
 .hero-inner { position: relative; z-index: 1; padding-bottom: 3.5rem; }
@@ -164,7 +165,7 @@ img { max-width: 100%; }
     border: 1px solid rgba(201,162,39,.3);
     border-radius: 50px; padding: .3rem .85rem;
     font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-    margin-bottom: 1rem;
+    margin: 0 auto 1rem;
 }
 
 .hero-title {
@@ -232,7 +233,7 @@ img { max-width: 100%; }
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     padding: .8rem 0;
-    position: sticky; top: 60px; z-index: 100;
+    position: sticky; top: 58px; z-index: 100;
     box-shadow: var(--shadow-xs);
 }
 
@@ -315,10 +316,10 @@ img { max-width: 100%; }
 .resume-card:hover .resume-card-thumb img { transform: scale(1.05); }
 
 .resume-card-placeholder {
-    width: 100%; aspect-ratio: 1 / 1;
+    width: 100%; height: 100%;
     display: flex; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, rgba(27,58,107,.08) 0%, rgba(27,58,107,.14) 100%);
-    color: var(--primary); font-size: 3rem; opacity: .6;
+    background: linear-gradient(135deg, rgba(27,58,107,.07) 0%, rgba(27,58,107,.13) 100%);
+    color: var(--primary); font-size: 3rem; opacity: .7;
 }
 
 /* Overlay on hover */
@@ -625,19 +626,24 @@ img { max-width: 100%; }
 
 @media (max-width: 767px) {
     .hero-section { padding: 2.5rem 0 0; }
+    .hero-inner { padding-bottom: 2.25rem; }
     .hero-title { font-size: 1.7rem; }
-    .hero-subtitle { margin-bottom: 1.35rem; }
+    .hero-subtitle { font-size: .92rem; margin-bottom: 1.25rem; }
+    .hero-search { max-width: 100%; }
     .hero-search .btn-search span { display: none; }
     .hero-search .btn-search { padding: .65rem 1rem; }
     .resume-left  { padding: 1.75rem 1.25rem; }
     .resume-right { padding: 1.5rem 1.25rem; }
     .resume-actions { gap: .5rem; }
     .btn-action { padding: .55rem 1rem; font-size: .82rem; }
+    .related-section { margin-top: 1.25rem; }
 }
 
 @media (max-width: 575px) {
     .resume-card-overlay { display: none; }
     .categories-bar { top: 58px; }
     .footer-inner { justify-content: center; text-align: center; }
-    .footer-inner .footer-nav { justify-content: center; }
+    .footer-inner .footer-nav { justify-content: center; flex-wrap: wrap; gap: .75rem; }
+    .hero-section { padding: 2rem 0 0; }
+    .hero-inner { padding-bottom: 1.75rem; }
 }
