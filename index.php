@@ -62,12 +62,7 @@ $pageTitle = getSetting('site_name', APP_NAME) . ' — Encontre Profissionais';
             <?php endif; ?>
 
             <h1 class="hero-title">
-                <?php
-                $heroTitle = getSetting('hero_title', 'Encontre Profissionais');
-                $words     = explode(' ', $heroTitle);
-                $last      = array_pop($words);
-                echo e(implode(' ', $words)) . ' <span>' . e($last) . '</span>';
-                ?>
+                <?= e(getSetting('hero_title', 'Encontre Profissionais')) ?>
             </h1>
             <p class="hero-subtitle">
                 <?= e(getSetting('hero_subtitle', 'Pesquise currículos por nome, profissão ou categoria')) ?>
@@ -100,7 +95,7 @@ $pageTitle = getSetting('site_name', APP_NAME) . ' — Encontre Profissionais';
 
     <!-- Wave divider -->
     <svg class="hero-wave" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 60" preserveAspectRatio="none">
-        <path fill="#f8f9fc" d="M0,32 C360,60 1080,0 1440,32 L1440,60 L0,60 Z"/>
+        <path fill="#ffffff" d="M0,32 C360,60 1080,0 1440,32 L1440,60 L0,60 Z"/>
     </svg>
 </section>
 
