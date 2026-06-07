@@ -62,7 +62,16 @@ $pageTitle = getSetting('site_name', APP_NAME) . ' — Encontre Profissionais';
             <?php endif; ?>
 
             <h1 class="hero-title">
-                <?= e(getSetting('hero_title', 'Encontre Profissionais')) ?>
+                <?php
+                $heroTitle = getSetting('hero_title', 'Encontre Profissionais');
+                $words = explode(' ', $heroTitle);
+                if (count($words) >= 2) {
+                    $last = array_pop($words);
+                    echo e(implode(' ', $words)) . ' <span class="hero-accent">' . e($last) . '</span>';
+                } else {
+                    echo '<span class="hero-accent">' . e($heroTitle) . '</span>';
+                }
+                ?>
             </h1>
             <p class="hero-subtitle">
                 <?= e(getSetting('hero_subtitle', 'Pesquise currículos por nome, profissão ou categoria')) ?>
