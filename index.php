@@ -103,8 +103,8 @@ $pageTitle = getSetting('site_name', APP_NAME) . ' — Encontre Profissionais';
     </div>
 
     <!-- Wave divider -->
-    <svg class="hero-wave" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 60" preserveAspectRatio="none">
-        <path fill="#ffffff" d="M0,32 C360,60 1080,0 1440,32 L1440,60 L0,60 Z"/>
+    <svg class="hero-wave" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 68" preserveAspectRatio="none">
+        <path fill="#ffffff" d="M0,38 C360,68 1080,8 1440,38 L1440,68 L0,68 Z"/>
     </svg>
 </section>
 
@@ -171,9 +171,8 @@ $pageTitle = getSetting('site_name', APP_NAME) . ' — Encontre Profissionais';
         <!-- Cards grid -->
         <div class="row g-3 g-md-4">
             <?php foreach ($resumes as $r): ?>
-            <div class="col-6 col-sm-6 col-md-4 col-lg-3">
-                <article class="resume-card h-100">
-                    <!-- Photo + overlay -->
+            <div class="col-6 col-md-4 col-lg-3">
+                <a href="<?= BASE_URL ?>/curriculo.php?s=<?= urlencode($r['slug']) ?>" class="resume-card">
                     <div class="resume-card-thumb">
                         <?php if ($r['photo']): ?>
                         <img src="<?= UPLOAD_URL . e($r['photo']) ?>" alt="<?= e($r['name']) ?>" loading="lazy">
@@ -183,25 +182,15 @@ $pageTitle = getSetting('site_name', APP_NAME) . ' — Encontre Profissionais';
                         <?php if ($r['category_name']): ?>
                         <span class="resume-card-cat-badge"><?= e($r['category_name']) ?></span>
                         <?php endif; ?>
-                        <div class="resume-card-overlay">
-                            <a href="<?= BASE_URL ?>/curriculo.php?s=<?= e($r['slug']) ?>" class="btn-view">
-                                <i class="bi bi-eye"></i>Ver Currículo
-                            </a>
-                        </div>
                     </div>
-                    <!-- Info -->
                     <div class="resume-card-body">
-                        <h5 class="resume-card-name"><?= e($r['name']) ?></h5>
+                        <div class="resume-card-name"><?= e($r['name']) ?></div>
                         <?php if ($r['profession']): ?>
-                        <p class="resume-card-profession"><?= e($r['profession']) ?></p>
+                        <div class="resume-card-profession"><?= e($r['profession']) ?></div>
                         <?php endif; ?>
+                        <div class="resume-card-cta"><i class="bi bi-arrow-right-circle"></i>Ver currículo</div>
                     </div>
-                    <div class="resume-card-footer">
-                        <a href="<?= BASE_URL ?>/curriculo.php?s=<?= e($r['slug']) ?>" class="btn-ver">
-                            <i class="bi bi-arrow-right"></i>Ver Currículo
-                        </a>
-                    </div>
-                </article>
+                </a>
             </div>
             <?php endforeach; ?>
         </div>
