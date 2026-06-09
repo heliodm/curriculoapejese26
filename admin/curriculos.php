@@ -526,10 +526,10 @@ include __DIR__ . '/includes/header.php';
 
 <div class="card admin-card mb-3">
     <div class="card-body py-2">
-        <form method="GET" class="row g-2 align-items-end">
+        <form method="GET" class="row g-2 align-items-end" id="resumeFilterForm">
             <div class="col-md-5">
-                <input type="text" name="busca" class="form-control form-control-sm"
-                       placeholder="Buscar por nome ou profissão…" value="<?= e($search) ?>">
+                <input type="text" name="busca" id="resumeSearch" class="form-control form-control-sm"
+                       placeholder="Buscar por nome ou profissão…" value="<?= e($search) ?>" autocomplete="off">
             </div>
             <div class="col-md-4">
                 <select name="categoria" class="form-select form-select-sm">
@@ -557,16 +557,16 @@ include __DIR__ . '/includes/header.php';
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover admin-table mb-0">
+            <table class="table table-hover admin-table mb-0" id="resumesTable">
                 <thead>
                     <tr>
                         <th>Foto</th>
-                        <th>Nome</th>
-                        <th>Profissão</th>
-                        <th>Categoria</th>
-                        <th>Views</th>
-                        <th>Público</th>
-                        <th>Editado</th>
+                        <th class="sortable">Nome <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                        <th class="sortable col-hide-md">Profissão <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                        <th class="sortable">Categoria <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                        <th class="sortable col-hide-md" data-sort-type="numeric">Views <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                        <th class="col-hide-sm">Público</th>
+                        <th class="sortable col-hide-md">Editado <i class="bi bi-arrow-down-up sort-icon"></i></th>
                         <th>Status</th>
                         <th>Ações</th>
                     </tr>
@@ -582,16 +582,16 @@ include __DIR__ . '/includes/header.php';
                             <?php endif; ?>
                         </td>
                         <td class="fw-medium"><?= e($r['name']) ?></td>
-                        <td class="text-muted small"><?= e($r['profession'] ?? '—') ?></td>
+                        <td class="text-muted small col-hide-md"><?= e($r['profession'] ?? '—') ?></td>
                         <td><span class="badge bg-primary-soft"><?= e($r['category_name'] ?? '—') ?></span></td>
-                        <td><?= $r['views'] ?></td>
-                        <td>
+                        <td class="col-hide-md"><?= $r['views'] ?></td>
+                        <td class="col-hide-sm">
                             <span class="badge <?= ($r['consent'] ?? 0) ? 'bg-success' : 'bg-warning text-dark' ?>"
                                   title="<?= ($r['consent'] ?? 0) ? 'Autorizado pelo usuário' : 'Aguardando autorização' ?>">
                                 <?= ($r['consent'] ?? 0) ? 'Autorizado' : 'Pendente' ?>
                             </span>
                         </td>
-                        <td class="text-muted small text-nowrap">
+                        <td class="text-muted small text-nowrap col-hide-md">
                             <?= !empty($r['updated_at']) ? date('d/m/Y', strtotime($r['updated_at'])) : '—' ?>
                         </td>
                         <td>
@@ -600,8 +600,7 @@ include __DIR__ . '/includes/header.php';
                                 <input type="hidden" name="acao" value="toggle">
                                 <input type="hidden" name="id" value="<?= $r['id'] ?>">
                                 <button type="submit"
-                                        class="badge border-0 <?= $r['active'] ? 'bg-success' : 'bg-secondary' ?>"
-                                        style="cursor:pointer;">
+                                        class="badge border-0 badge-btn <?= $r['active'] ? 'bg-success' : 'bg-secondary' ?>">
                                     <?= $r['active'] ? 'Ativo' : 'Inativo' ?>
                                 </button>
                             </form>
@@ -666,5 +665,21 @@ function copyResLink(url, btn) {
         prompt('Copie o link:', url);
     }
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    makeTableSortable('resumesTable');
+
+    // Debounced auto-submit on text search
+    var searchInput = document.getElementById('resumeSearch');
+    if (searchInput) {
+        var debounceTimer;
+        searchInput.addEventListener('input', function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () {
+                document.getElementById('resumeFilterForm').submit();
+            }, 450);
+        });
+    }
+});
 </script>
 <?php include __DIR__ . '/includes/footer.php'; ?>

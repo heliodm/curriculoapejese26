@@ -347,3 +347,52 @@
     background: #d1e7dd; border: 1px solid #198754; border-left: 4px solid #198754;
     border-radius: 6px; padding: .6rem .9rem; font-size: .82rem; color: #0a3622;
 }
+
+/* ===== User Avatar Round (form) ===== */
+.user-avatar-form {
+    width: 80px; height: 80px; object-fit: cover; border-radius: 50%;
+    border: 2px solid var(--primary); display: block; margin: 0 auto;
+}
+.user-avatar-form-placeholder {
+    width: 80px; height: 80px; background: #dde3ee; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto; color: #b0bcd4; font-size: 2rem;
+}
+
+/* ===== Table Avatar Round (users list) ===== */
+.table-avatar-round {
+    width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+    border: 2px solid var(--secondary); vertical-align: middle; display: inline-block;
+}
+.table-avatar-round-placeholder {
+    width: 36px; height: 36px; border-radius: 50%; background: #dde3ee;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #b0bcd4; vertical-align: middle; font-size: .9rem;
+}
+
+/* ===== Badge as clickable button ===== */
+.badge-btn { cursor: pointer; }
+
+/* ===== Form size helpers ===== */
+.form-label-sm { font-size: .78rem; }
+.form-text-xs  { font-size: .72rem; }
+
+/* ===== Sortable Table Headers ===== */
+.admin-table thead th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+.admin-table thead th.sortable:hover { background: #142e56; }
+.sort-icon { margin-left: .3rem; opacity: .38; transition: opacity .15s; font-size: .7rem; }
+.admin-table thead th.sort-asc  .sort-icon,
+.admin-table thead th.sort-desc .sort-icon { opacity: 1; }
+
+/* ===== Mobile admin table ===== */
+@media (max-width: 767px) {
+    .col-hide-md { display: none !important; }
+    .admin-table tbody td { padding: .52rem .65rem; font-size: .8rem; }
+    .admin-table thead th { padding: .55rem .65rem; font-size: .66rem; }
+}
+@media (max-width: 575px) {
+    .col-hide-sm { display: none !important; }
+    .admin-table { font-size: .76rem; }
+    .table-responsive { border-radius: 0 0 var(--radius) var(--radius); }
+    .admin-table tbody td.text-nowrap { white-space: normal; }
+}

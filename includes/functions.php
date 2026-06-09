@@ -365,6 +365,50 @@ function sendMail(string $to, string $toName, string $subject, string $htmlBody)
     return @mail($to, "=?UTF-8?B?" . base64_encode($subject) . "?=", $htmlBody, $headers);
 }
 
+function emailTemplate(string $content, string $subject = ''): string {
+    $siteName = htmlspecialchars(getSetting('site_name', 'APEJESE'), ENT_QUOTES);
+    $logoPath = getSetting('logo', '');
+    $logoUrl  = htmlspecialchars(
+        $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-default.png',
+        ENT_QUOTES
+    );
+    $year = date('Y');
+    return <<<HTML
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background:#f0f4fa;font-family:'Segoe UI',Arial,sans-serif;color:#111827;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4fa;padding:32px 16px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 18px rgba(0,0,0,.09);">
+  <tr>
+    <td style="background:#1B3A6B;padding:22px 32px;text-align:center;border-bottom:4px solid #C9A227;">
+      <img src="{$logoUrl}" alt="{$siteName}" style="max-height:50px;max-width:160px;object-fit:contain;display:block;margin:0 auto;">
+      <p style="color:rgba(255,255,255,.65);font-size:11px;margin:6px 0 0;letter-spacing:.08em;text-transform:uppercase;">{$siteName}</p>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:32px 36px;font-size:15px;line-height:1.75;color:#111827;">
+      {$content}
+    </td>
+  </tr>
+  <tr>
+    <td style="background:#f7f9fc;border-top:1px solid #e8ecf4;padding:18px 36px;text-align:center;">
+      <p style="font-size:12px;color:#8a94a8;margin:0;">&copy; {$year} <strong style="color:#1B3A6B;">{$siteName}</strong> &mdash; Todos os direitos reservados.</p>
+      <p style="font-size:11px;color:#b0bcd4;margin:4px 0 0;">Este e-mail foi enviado automaticamente. Por favor, n&atilde;o responda.</p>
+    </td>
+  </tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+}
+
 /* ── Update / Deploy helpers ──────────────────────────────────────────── */
 
 function copyDirectory(string $src, string $dest, array $exclude = []): void {

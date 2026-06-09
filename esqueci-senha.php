@@ -28,13 +28,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 db()->prepare("INSERT INTO password_resets (user_id, token, expires_at) VALUES (?,?,?)")
                     ->execute([$user['id'], $token, $expires]);
 
-                $resetUrl = BASE_URL . '/redefinir-senha.php?token=' . $token;
-                $htmlBody = "
-                    <p>Olá, <strong>" . htmlspecialchars($user['full_name'], ENT_QUOTES) . "</strong>!</p>
-                    <p>Você solicitou a redefinição de senha. Clique no link abaixo para criar uma nova senha:</p>
-                    <p><a href='{$resetUrl}'>{$resetUrl}</a></p>
-                    <p><small>Este link expira em 1 hora. Se você não solicitou esta redefinição, ignore este e-mail.</small></p>
-                ";
+                $resetUrl    = BASE_URL . '/redefinir-senha.php?token=' . $token;
+                $resetUrlEsc = htmlspecialchars($resetUrl, ENT_QUOTES);
+                $htmlBody = emailTemplate(
+                    "<p>Olá, <strong>" . htmlspecialchars($user['full_name'], ENT_QUOTES) . "</strong>!</p>
+                     <p>Você solicitou a redefinição de senha. Clique no botão abaixo para criar uma nova senha:</p>
+                     <p style=\"text-align:center;margin:28px 0;\">
+                         <a href=\"{$resetUrlEsc}\" style=\"display:inline-block;background:#1B3A6B;color:#ffffff;padding:12px 30px;border-radius:7px;text-decoration:none;font-weight:600;font-size:15px;\">Redefinir Senha</a>
+                     </p>
+                     <p style=\"font-size:13px;color:#6c757d;\">Ou copie e cole este link no navegador:<br>
+                         <a href=\"{$resetUrlEsc}\" style=\"color:#1B3A6B;word-break:break-all;\">{$resetUrl}</a>
+                     </p>
+                     <p style=\"font-size:12px;color:#b0bcd4;margin-top:16px;\">Este link expira em 1 hora. Se você não solicitou esta redefinição, pode ignorar este e-mail.</p>",
+                    'Redefinição de Senha — APEJESE'
+                );
                 sendMail($user['email'], $user['full_name'], 'Redefinição de Senha — APEJESE', $htmlBody);
             }
 

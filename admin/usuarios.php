@@ -43,16 +43,20 @@ if ($acao === 'toggle_adimplente' && $id > 0 && $_SERVER['REQUEST_METHOD'] === '
         $statusLabel = $newStatus ? 'adimplente' : 'inadimplente';
         logUserAction($id, 'toggle_adimplente', "Situação alterada para {$statusLabel}.");
         if ($uRow && $uRow['email']) {
-            $sitMsg = $newStatus ? 'ADIMPLENTE' : 'INADIMPLENTE';
-            $sitTxt = $newStatus ? 'Sua situação foi regularizada.' : 'Sua anuidade pode estar em aberto. Entre em contato com a associação.';
+            $sitMsg   = $newStatus ? 'ADIMPLENTE' : 'INADIMPLENTE';
+            $sitColor = $newStatus ? '#198754' : '#dc3545';
+            $sitTxt   = $newStatus ? 'Sua situação foi regularizada.' : 'Sua anuidade pode estar em aberto. Entre em contato com a secretaria.';
             sendMail(
                 $uRow['email'],
                 $uRow['full_name'],
                 'Atualização de Situação — APEJESE',
-                "<p>Prezado(a) <strong>" . htmlspecialchars($uRow['full_name'], ENT_QUOTES) . "</strong>,</p>
-                 <p>Sua situação junto à APEJESE foi atualizada para: <strong>{$sitMsg}</strong>.</p>
-                 <p>{$sitTxt}</p>
-                 <p>Em caso de dúvidas, entre em contato com a secretaria.</p>"
+                emailTemplate(
+                    "<p>Prezado(a) <strong>" . htmlspecialchars($uRow['full_name'], ENT_QUOTES) . "</strong>,</p>
+                     <p>Sua situação junto à APEJESE foi atualizada para: <strong style=\"color:{$sitColor};font-size:1.1em;\">{$sitMsg}</strong>.</p>
+                     <p>{$sitTxt}</p>
+                     <p style=\"font-size:13px;color:#6c757d;margin-top:1.5rem;\">Em caso de dúvidas, entre em contato com a secretaria.</p>",
+                    'Atualização de Situação — APEJESE'
+                )
             );
         }
         flash('success', 'Situação financeira atualizada.');
@@ -72,14 +76,21 @@ if ($acao === 'reset_senha' && $id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST')
         db()->prepare("UPDATE users SET password = ? WHERE id = ?")->execute([password_hash($tempPass, PASSWORD_BCRYPT), $id]);
         logUserAction($id, 'reset_senha', 'Senha redefinida pelo admin.');
         if ($uRow && $uRow['email']) {
+            $loginUrl = htmlspecialchars(BASE_URL . '/login.php', ENT_QUOTES);
             sendMail(
                 $uRow['email'],
                 $uRow['full_name'],
                 'Redefinição de Senha — APEJESE',
-                "<p>Prezado(a) <strong>" . htmlspecialchars($uRow['full_name'], ENT_QUOTES) . "</strong>,</p>
-                 <p>Sua senha foi redefinida pelo administrador. Sua nova senha temporária é:</p>
-                 <p style='font-size:1.4em;font-weight:bold;letter-spacing:2px;'>{$tempPass}</p>
-                 <p>Acesse o sistema e altere sua senha assim que possível.</p>"
+                emailTemplate(
+                    "<p>Prezado(a) <strong>" . htmlspecialchars($uRow['full_name'], ENT_QUOTES) . "</strong>,</p>
+                     <p>Sua senha foi redefinida pelo administrador. Sua nova senha temporária é:</p>
+                     <div style=\"background:#f0f4fa;border:2px dashed #C9A227;border-radius:8px;padding:14px 24px;text-align:center;margin:20px 0;\">
+                         <span style=\"font-size:1.5em;font-weight:700;letter-spacing:4px;color:#1B3A6B;font-family:monospace;\">{$tempPass}</span>
+                     </div>
+                     <p>Acesse o sistema e altere sua senha assim que possível.</p>
+                     <p style=\"text-align:center;margin:24px 0;\"><a href=\"{$loginUrl}\" style=\"display:inline-block;background:#1B3A6B;color:#ffffff;padding:11px 28px;border-radius:7px;text-decoration:none;font-weight:600;font-size:14px;\">Acessar o Sistema</a></p>",
+                    'Redefinição de Senha — APEJESE'
+                )
             );
             flash('success', "Senha redefinida e enviada por e-mail para {$uRow['email']}.");
         } else {
@@ -252,15 +263,13 @@ include __DIR__ . '/includes/header.php';
                     $editPhotoUrl = $editPhoto ? UPLOAD_URL . $editPhoto : null;
                     ?>
                     <?php if ($editPhotoUrl): ?>
-                    <img src="<?= e($editPhotoUrl) ?>" class="rounded mb-2"
-                         style="width:80px;height:80px;object-fit:cover;border:2px solid var(--primary);">
+                    <img src="<?= e($editPhotoUrl) ?>" class="user-avatar-form mb-2" alt="">
                     <?php else: ?>
-                    <div class="rounded mb-2 d-flex align-items-center justify-content-center"
-                         style="width:80px;height:80px;background:#dde3ee;margin:0 auto;">
-                        <i class="bi bi-person-fill" style="font-size:2rem;color:#b0bcd4;"></i>
+                    <div class="user-avatar-form-placeholder mb-2">
+                        <i class="bi bi-person-fill"></i>
                     </div>
                     <?php endif; ?>
-                    <label class="form-label" style="font-size:.78rem;">Foto do Perfil</label>
+                    <label class="form-label form-label-sm">Foto do Perfil</label>
                     <input type="file" name="photo" class="form-control form-control-sm" accept="image/*">
                 </div>
                 <div class="col-md-10">
@@ -343,7 +352,7 @@ include __DIR__ . '/includes/header.php';
                     <label class="form-label">Validade da Carteira</label>
                     <input type="date" name="carteira_validade" class="form-control"
                            value="<?= e($editing['carteira_validade'] ?? '') ?>">
-                    <div class="form-text" style="font-size:.72rem;">Deixe vazio para usar a validade global.</div>
+                    <div class="form-text form-text-xs">Deixe vazio para usar a validade global.</div>
                 </div>
             </div>
             <div class="mt-3 d-flex gap-2">
@@ -362,9 +371,9 @@ include __DIR__ . '/includes/header.php';
     <div class="card-body py-2">
         <form method="GET" class="row g-2 align-items-end">
             <div class="col-md-5">
-                <input type="text" name="busca" class="form-control form-control-sm"
+                <input type="text" name="busca" id="liveSearch" class="form-control form-control-sm"
                        placeholder="Buscar por nome, usuário, e-mail ou matrícula…"
-                       value="<?= e($busca) ?>">
+                       value="<?= e($busca) ?>" autocomplete="off">
             </div>
             <div class="col-md-2">
                 <select name="role" class="form-select form-select-sm">
@@ -395,30 +404,29 @@ include __DIR__ . '/includes/header.php';
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover admin-table mb-0">
+            <table class="table table-hover admin-table mb-0" id="usersTable">
                 <thead>
                     <tr>
                         <th>Foto</th>
-                        <th>Nome</th>
-                        <th>Matrícula</th>
-                        <th>Nível</th>
-                        <th>Currículos</th>
-                        <th>Último Login</th>
+                        <th class="sortable">Nome <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                        <th class="sortable col-hide-md">Matrícula <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                        <th class="sortable">Nível <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                        <th class="sortable col-hide-md" data-sort-type="numeric">Currículos <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                        <th class="sortable col-hide-md">Último Login <i class="bi bi-arrow-down-up sort-icon"></i></th>
                         <th>Status</th>
-                        <th>Situação</th>
+                        <th class="col-hide-sm">Situação</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($users as $u): ?>
-                    <tr>
+                    <tr data-search="<?= e(strtolower($u['full_name'] . ' ' . $u['username'] . ' ' . $u['email'] . ' ' . ($u['matricula_apejese'] ?? ''))) ?>">
                         <td>
                             <?php if ($u['photo']): ?>
-                            <img src="<?= UPLOAD_URL . e($u['photo']) ?>" class="table-avatar"
-                                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+                            <img src="<?= UPLOAD_URL . e($u['photo']) ?>" class="table-avatar-round" alt="">
                             <?php else: ?>
-                            <div style="width:36px;height:36px;border-radius:50%;background:#dde3ee;display:flex;align-items:center;justify-content:center;">
-                                <i class="bi bi-person-fill" style="color:#b0bcd4;"></i>
+                            <div class="table-avatar-round-placeholder">
+                                <i class="bi bi-person-fill"></i>
                             </div>
                             <?php endif; ?>
                         </td>
@@ -428,10 +436,10 @@ include __DIR__ . '/includes/header.php';
                             <br><small class="text-muted"><?= e($u['cpf']) ?></small>
                             <?php endif; ?>
                         </td>
-                        <td><code class="small"><?= $u['matricula_apejese'] ? e($u['matricula_apejese']) : '<span class="text-muted">—</span>' ?></code></td>
+                        <td class="col-hide-md"><code class="small"><?= $u['matricula_apejese'] ? e($u['matricula_apejese']) : '<span class="text-muted">—</span>' ?></code></td>
                         <td><span class="badge <?= $roleBadges[$u['role']] ?? 'bg-secondary' ?>"><?= $roleLabels[$u['role']] ?? $u['role'] ?></span></td>
-                        <td><?= $u['total_resumes'] ?></td>
-                        <td class="text-muted small"><?= $u['last_login'] ? date('d/m/Y H:i', strtotime($u['last_login'])) : '—' ?></td>
+                        <td class="col-hide-md"><?= $u['total_resumes'] ?></td>
+                        <td class="text-muted small col-hide-md"><?= $u['last_login'] ? date('d/m/Y H:i', strtotime($u['last_login'])) : '—' ?></td>
                         <td>
                             <?php if ($u['id'] !== (int)$_SESSION['user_id']): ?>
                             <form method="POST" class="d-inline" data-no-unsaved>
@@ -439,8 +447,8 @@ include __DIR__ . '/includes/header.php';
                                 <input type="hidden" name="acao" value="toggle">
                                 <input type="hidden" name="id" value="<?= $u['id'] ?>">
                                 <button type="submit"
-                                        class="badge border-0 <?= $u['active'] ? 'bg-success' : 'bg-secondary' ?>"
-                                        style="cursor:pointer;" title="Clique para alternar">
+                                        class="badge border-0 badge-btn <?= $u['active'] ? 'bg-success' : 'bg-secondary' ?>"
+                                        title="Clique para alternar">
                                     <?= $u['active'] ? 'Ativo' : 'Inativo' ?>
                                 </button>
                             </form>
@@ -448,14 +456,14 @@ include __DIR__ . '/includes/header.php';
                             <span class="badge bg-success">Ativo</span>
                             <?php endif; ?>
                         </td>
-                        <td>
+                        <td class="col-hide-sm">
                             <form method="POST" class="d-inline" data-no-unsaved>
                                 <?= csrfField() ?>
                                 <input type="hidden" name="acao" value="toggle_adimplente">
                                 <input type="hidden" name="id" value="<?= $u['id'] ?>">
                                 <button type="submit"
-                                        class="badge border-0 <?= ($u['adimplente'] ?? 1) ? 'bg-success' : 'bg-danger' ?>"
-                                        style="cursor:pointer;" title="Clique para alternar situação">
+                                        class="badge border-0 badge-btn <?= ($u['adimplente'] ?? 1) ? 'bg-success' : 'bg-danger' ?>"
+                                        title="Clique para alternar situação">
                                     <?= ($u['adimplente'] ?? 1) ? 'Adimplente' : 'Inadimplente' ?>
                                 </button>
                             </form>
@@ -497,12 +505,6 @@ include __DIR__ . '/includes/header.php';
 </div>
 
 <script>
-function toggleField(fieldId, iconId) {
-    const f = document.getElementById(fieldId);
-    const i = document.getElementById(iconId);
-    if (f.type === 'password') { f.type = 'text'; i.className = 'bi bi-eye-slash'; }
-    else { f.type = 'password'; i.className = 'bi bi-eye'; }
-}
 const cpfField = document.getElementById('cpfField');
 if (cpfField) {
     cpfField.addEventListener('input', function () {
@@ -513,6 +515,11 @@ if (cpfField) {
         this.value = v;
     });
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    makeTableSortable('usersTable');
+    adminLiveFilter('liveSearch', 'usersTable');
+});
 </script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>
