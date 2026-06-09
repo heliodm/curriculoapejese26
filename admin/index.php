@@ -21,6 +21,9 @@ $totalViews      = (int)(db()->query("SELECT SUM(views) FROM resumes")->fetchCol
 $pendingConsent  = hasConsentColumn()
     ? (int)db()->query("SELECT COUNT(*) FROM resumes WHERE consent=0")->fetchColumn()
     : 0;
+$adimplentes = hasAdimplenteColumn()
+    ? (int)db()->query("SELECT COUNT(*) FROM users WHERE adimplente = 1 AND active = 1")->fetchColumn()
+    : null;
 
 $recentResumes = db()->query(
     "SELECT r.*, c.name AS category_name
@@ -40,42 +43,90 @@ $recentResumes = db()->query(
 </div>
 
 <!-- Stats -->
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
+<div class="row g-3 mb-3">
+    <div class="col-6 col-md">
         <div class="stat-card">
-            <div class="stat-icon bg-primary-light"><i class="bi bi-file-person"></i></div>
+            <div class="stat-icon bg-secondary-light"><i class="bi bi-file-person"></i></div>
             <div class="stat-info">
-                <div class="stat-value"><?= $totalResumes ?></div>
+                <div class="stat-value"><?= number_format($totalResumes) ?></div>
                 <div class="stat-label">Currículos</div>
             </div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card">
-            <div class="stat-icon bg-secondary-light"><i class="bi bi-globe"></i></div>
+    <div class="col-6 col-md">
+        <div class="stat-card stat-primary">
+            <div class="stat-icon bg-primary-light"><i class="bi bi-globe2"></i></div>
             <div class="stat-info">
-                <div class="stat-value"><?= $totalPublished ?></div>
+                <div class="stat-value"><?= number_format($totalPublished) ?></div>
                 <div class="stat-label">Publicados</div>
             </div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card">
+    <div class="col-6 col-md">
+        <div class="stat-card stat-purple">
+            <div class="stat-icon bg-purple-light"><i class="bi bi-tags"></i></div>
+            <div class="stat-info">
+                <div class="stat-value"><?= $totalCategories ?></div>
+                <div class="stat-label">Categorias</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md">
+        <div class="stat-card stat-accent">
             <div class="stat-icon bg-accent-light"><i class="bi bi-people"></i></div>
             <div class="stat-info">
-                <div class="stat-value"><?= $totalUsers ?></div>
+                <div class="stat-value"><?= number_format($totalUsers) ?></div>
                 <div class="stat-label">Usuários</div>
             </div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
-        <div class="stat-card">
-            <div class="stat-icon bg-green-light"><i class="bi bi-eye"></i></div>
+    <?php if ($adimplentes !== null): ?>
+    <div class="col-6 col-md">
+        <div class="stat-card stat-green">
+            <div class="stat-icon bg-green-light"><i class="bi bi-check-circle"></i></div>
+            <div class="stat-info">
+                <div class="stat-value"><?= $adimplentes ?></div>
+                <div class="stat-label">Adimplentes</div>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+    <div class="col-6 col-md">
+        <div class="stat-card stat-teal">
+            <div class="stat-icon bg-teal-light"><i class="bi bi-eye"></i></div>
             <div class="stat-info">
                 <div class="stat-value"><?= number_format($totalViews) ?></div>
                 <div class="stat-label">Visualizações</div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-2 mb-4">
+    <div class="col-6 col-md-3">
+        <a href="<?= BASE_URL ?>/admin/curriculos.php?acao=novo" class="quick-action-card">
+            <i class="bi bi-person-plus-fill"></i>
+            <span>Novo Currículo</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="<?= BASE_URL ?>/admin/usuarios.php?acao=novo" class="quick-action-card">
+            <i class="bi bi-person-add"></i>
+            <span>Novo Usuário</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="<?= BASE_URL ?>/admin/exportar.php" class="quick-action-card">
+            <i class="bi bi-download"></i>
+            <span>Exportar Dados</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="<?= BASE_URL ?>/admin/email-massa.php" class="quick-action-card">
+            <i class="bi bi-envelope-paper"></i>
+            <span>E-mail em Massa</span>
+        </a>
     </div>
 </div>
 
@@ -106,6 +157,7 @@ $recentResumes = db()->query(
                         <th>Categoria</th>
                         <th>Público</th>
                         <th>Status</th>
+                        <th>Atualizado</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -125,6 +177,9 @@ $recentResumes = db()->query(
                                 <?= $r['active'] ? 'Ativo' : 'Inativo' ?>
                             </span>
                         </td>
+                        <td class="text-muted" style="font-size:.8rem;white-space:nowrap;">
+                            <?= !empty($r['updated_at']) ? date('d/m/y', strtotime($r['updated_at'])) : '—' ?>
+                        </td>
                         <td>
                             <a href="<?= BASE_URL ?>/curriculo.php?s=<?= e($r['slug']) ?>" target="_blank"
                                class="btn btn-xs btn-outline-secondary me-1"><i class="bi bi-eye"></i></a>
@@ -134,7 +189,7 @@ $recentResumes = db()->query(
                     </tr>
                     <?php endforeach; ?>
                     <?php if (empty($recentResumes)): ?>
-                    <tr><td colspan="6" class="text-center text-muted py-4">Nenhum currículo cadastrado</td></tr>
+                    <tr><td colspan="7" class="text-center text-muted py-4">Nenhum currículo cadastrado</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -157,17 +212,30 @@ $uStmt = db()->prepare("SELECT * FROM users WHERE id = ?");
 $uStmt->execute([$_SESSION['user_id']]);
 $myUser = $uStmt->fetch();
 
-$adimplente  = (int)($myUser['adimplente'] ?? 1);
+$adimplente   = (int)($myUser['adimplente'] ?? 1);
 $cardValidade = !empty($myUser['carteira_validade'])
     ? date('d/m/Y', strtotime($myUser['carteira_validade']))
     : getSetting('carteira_validade', '');
-
 $photoUrl = $myUser['photo'] ? UPLOAD_URL . $myUser['photo'] : null;
 
-// Detect incomplete profile data
 $missingFields = [];
 if (empty($myUser['matricula_apejese'])) $missingFields[] = 'Matrícula APEJESE';
 if (empty($myUser['cpf']))               $missingFields[] = 'CPF';
+
+// Profile completion
+$completionItems = [
+    'Foto de perfil'         => !empty($myUser['photo']),
+    'Matrícula APEJESE'      => !empty($myUser['matricula_apejese']),
+    'CPF'                    => !empty($myUser['cpf']),
+    'Currículo criado'       => !empty($myResume),
+    'Profissão'              => !empty($myResume['profession']),
+    'Sobre mim'              => !empty($myResume['about']),
+    'Foto no currículo'      => !empty($myResume['photo']),
+    'Contato (tel/WhatsApp)' => !empty($myResume['phone']) || !empty($myResume['whatsapp']),
+];
+$completionDone  = count(array_filter($completionItems));
+$completionTotal = count($completionItems);
+$completionPct   = (int)round($completionDone / $completionTotal * 100);
 ?>
 
 <div class="admin-page-header">
@@ -186,7 +254,7 @@ if (empty($myUser['cpf']))               $missingFields[] = 'CPF';
     </a>
 </div>
 
-<!-- Alertas ──────────────────────────────────────────────────── -->
+<!-- Alertas -->
 <?php if (!$adimplente): ?>
 <div class="alert alert-danger d-flex align-items-center gap-2 mb-3">
     <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0"></i>
@@ -218,25 +286,23 @@ if (empty($myUser['cpf']))               $missingFields[] = 'CPF';
 </div>
 <?php endif; ?>
 
-<!-- Stats ────────────────────────────────────────────────────── -->
+<!-- Stats -->
 <div class="row g-3 mb-4">
-    <!-- Situação financeira -->
     <div class="col-6 col-md-3">
-        <div class="stat-card" style="border-left:3px solid <?= $adimplente ? '#28a745' : '#dc3545' ?>;">
+        <div class="stat-card" style="border-top-color:<?= $adimplente ? '#198754' : 'var(--accent)' ?>;">
             <div class="stat-icon <?= $adimplente ? 'bg-green-light' : 'bg-accent-light' ?>">
                 <i class="bi bi-<?= $adimplente ? 'check-circle' : 'x-circle' ?>"></i>
             </div>
             <div class="stat-info">
-                <div class="stat-value" style="font-size:1rem;color:<?= $adimplente ? '#28a745' : '#dc3545' ?>;">
+                <div class="stat-value" style="font-size:1rem;color:<?= $adimplente ? '#198754' : 'var(--accent)' ?>;">
                     <?= $adimplente ? 'Adimplente' : 'Inadimplente' ?>
                 </div>
                 <div class="stat-label">Situação</div>
             </div>
         </div>
     </div>
-    <!-- Visualizações -->
     <div class="col-6 col-md-3">
-        <div class="stat-card">
+        <div class="stat-card stat-primary">
             <div class="stat-icon bg-primary-light"><i class="bi bi-eye"></i></div>
             <div class="stat-info">
                 <div class="stat-value"><?= $myResume ? number_format($myResume['views']) : '0' ?></div>
@@ -244,10 +310,9 @@ if (empty($myUser['cpf']))               $missingFields[] = 'CPF';
             </div>
         </div>
     </div>
-    <!-- Visibilidade pública -->
     <div class="col-6 col-md-3">
         <?php $isVisible = $myResume && $myResume['active'] && ($myResume['consent'] ?? 0) && $adimplente; ?>
-        <div class="stat-card">
+        <div class="stat-card" style="border-top-color:<?= $isVisible ? '#198754' : 'var(--accent)' ?>;">
             <div class="stat-icon <?= $isVisible ? 'bg-green-light' : 'bg-accent-light' ?>">
                 <i class="bi bi-globe<?= $isVisible ? '2' : '' ?>"></i>
             </div>
@@ -257,10 +322,9 @@ if (empty($myUser['cpf']))               $missingFields[] = 'CPF';
             </div>
         </div>
     </div>
-    <!-- Validade da carteira -->
     <div class="col-6 col-md-3">
-        <div class="stat-card">
-            <div class="stat-icon bg-secondary-light"><i class="bi bi-credit-card"></i></div>
+        <div class="stat-card stat-purple">
+            <div class="stat-icon bg-purple-light"><i class="bi bi-credit-card"></i></div>
             <div class="stat-info">
                 <div class="stat-value" style="font-size:<?= $cardValidade ? '.9rem' : '1rem' ?>;">
                     <?= $cardValidade ? e($cardValidade) : '—' ?>
@@ -271,7 +335,47 @@ if (empty($myUser['cpf']))               $missingFields[] = 'CPF';
     </div>
 </div>
 
-<!-- Meu Currículo ────────────────────────────────────────────── -->
+<!-- Completude do Perfil -->
+<div class="card admin-card mb-4">
+    <div class="card-header">
+        <i class="bi bi-patch-check me-1"></i>Completude do Perfil
+        <span class="ms-auto fw-normal text-muted" style="font-size:.8rem;"><?= $completionPct ?>%</span>
+    </div>
+    <div class="card-body">
+        <div class="completion-bar-wrap">
+            <div class="completion-bar-fill <?= $completionPct >= 100 ? 'complete' : '' ?>"
+                 style="width:<?= $completionPct ?>%"></div>
+        </div>
+        <div class="row g-1 mb-2">
+            <?php foreach ($completionItems as $label => $done): ?>
+            <div class="col-6 col-md-3">
+                <div class="completion-item <?= $done ? 'done' : '' ?>">
+                    <i class="bi bi-<?= $done ? 'check-circle-fill' : 'circle' ?>"></i>
+                    <span><?= $label ?></span>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php if ($completionPct < 100): ?>
+        <div class="d-flex gap-2 flex-wrap mt-1">
+            <a href="<?= BASE_URL ?>/admin/perfil.php" class="btn btn-xs btn-outline-primary">
+                <i class="bi bi-person-gear me-1"></i>Editar Perfil
+            </a>
+            <?php if (!$myResume): ?>
+            <a href="<?= BASE_URL ?>/admin/curriculos.php?acao=novo" class="btn btn-xs btn-primary-custom">
+                <i class="bi bi-plus me-1"></i>Criar Currículo
+            </a>
+            <?php elseif (!empty($myResume['id'])): ?>
+            <a href="<?= BASE_URL ?>/admin/curriculos.php?acao=editar&id=<?= $myResume['id'] ?>" class="btn btn-xs btn-primary-custom">
+                <i class="bi bi-pencil me-1"></i>Completar Currículo
+            </a>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- Meu Currículo -->
 <?php if ($myResume): ?>
 <div class="card admin-card mb-4">
     <div class="card-header"><i class="bi bi-file-person me-1"></i>Meu Currículo</div>
@@ -320,7 +424,7 @@ if (empty($myUser['cpf']))               $missingFields[] = 'CPF';
 </div>
 <?php endif; ?>
 
-<!-- Meus Dados APEJESE ───────────────────────────────────────── -->
+<!-- Meus Dados APEJESE -->
 <div class="card admin-card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="bi bi-card-list me-1"></i>Meus Dados APEJESE</span>
@@ -362,42 +466,27 @@ if (empty($myUser['cpf']))               $missingFields[] = 'CPF';
     </div>
 </div>
 
-<!-- Atalhos: Declaração, Carteira e Perfil ───────────────────── -->
+<!-- Atalhos -->
 <div class="row g-3">
     <div class="col-md-4">
-        <a href="<?= BASE_URL ?>/admin/declaracao.php" class="text-decoration-none">
-            <div class="stat-card" style="cursor:pointer;">
-                <div class="stat-icon bg-primary-light"><i class="bi bi-file-earmark-text"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value" style="font-size:1rem;">Declaração</div>
-                    <div class="stat-label">Visualizar e baixar PDF</div>
-                </div>
-                <i class="bi bi-arrow-right ms-auto text-muted"></i>
-            </div>
+        <a href="<?= BASE_URL ?>/admin/declaracao.php" class="quick-action-card">
+            <i class="bi bi-file-earmark-text" style="color:var(--primary);"></i>
+            <span>Minha Declaração</span>
+            <small class="text-muted" style="font-size:.7rem;">Visualizar e baixar PDF</small>
         </a>
     </div>
     <div class="col-md-4">
-        <a href="<?= BASE_URL ?>/admin/carteira.php" class="text-decoration-none">
-            <div class="stat-card" style="cursor:pointer;">
-                <div class="stat-icon bg-secondary-light"><i class="bi bi-credit-card-2-front"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value" style="font-size:1rem;">Carteira</div>
-                    <div class="stat-label">Visualizar e baixar PDF</div>
-                </div>
-                <i class="bi bi-arrow-right ms-auto text-muted"></i>
-            </div>
+        <a href="<?= BASE_URL ?>/admin/carteira.php" class="quick-action-card">
+            <i class="bi bi-credit-card-2-front" style="color:#9a7a18;"></i>
+            <span>Minha Carteira</span>
+            <small class="text-muted" style="font-size:.7rem;">Visualizar e baixar PDF</small>
         </a>
     </div>
     <div class="col-md-4">
-        <a href="<?= BASE_URL ?>/admin/perfil.php" class="text-decoration-none">
-            <div class="stat-card" style="cursor:pointer;">
-                <div class="stat-icon" style="background:var(--accent-light,#f3ede0);"><i class="bi bi-person-gear" style="color:var(--secondary);"></i></div>
-                <div class="stat-info">
-                    <div class="stat-value" style="font-size:1rem;">Meu Perfil</div>
-                    <div class="stat-label">Editar dados e foto</div>
-                </div>
-                <i class="bi bi-arrow-right ms-auto text-muted"></i>
-            </div>
+        <a href="<?= BASE_URL ?>/admin/perfil.php" class="quick-action-card">
+            <i class="bi bi-person-gear" style="color:var(--primary);"></i>
+            <span>Meu Perfil</span>
+            <small class="text-muted" style="font-size:.7rem;">Editar dados e foto</small>
         </a>
     </div>
 </div>

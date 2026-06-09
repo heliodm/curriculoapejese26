@@ -6,6 +6,8 @@ $isAdmin     = in_array($role, ['admin', 'editor']);
 <aside class="admin-sidebar" id="adminSidebar">
     <ul class="sidebar-menu list-unstyled mb-0">
 
+        <li class="sidebar-section-label">Principal</li>
+
         <li>
             <a href="<?= BASE_URL ?>/admin/index.php"
                class="sidebar-link <?= $currentFile === 'index.php' ? 'active' : '' ?>">
@@ -13,7 +15,6 @@ $isAdmin     = in_array($role, ['admin', 'editor']);
                 <span>Dashboard</span>
             </a>
         </li>
-
         <li>
             <a href="<?= BASE_URL ?>/admin/curriculos.php"
                class="sidebar-link <?= $currentFile === 'curriculos.php' ? 'active' : '' ?>">
@@ -21,7 +22,6 @@ $isAdmin     = in_array($role, ['admin', 'editor']);
                 <span><?= $isAdmin ? 'Currículos' : 'Meu Currículo' ?></span>
             </a>
         </li>
-
         <li>
             <a href="<?= BASE_URL ?>/admin/declaracao.php"
                class="sidebar-link <?= $currentFile === 'declaracao.php' ? 'active' : '' ?>">
@@ -38,6 +38,8 @@ $isAdmin     = in_array($role, ['admin', 'editor']);
         </li>
 
         <?php if ($isAdmin): ?>
+        <li class="sidebar-section-label">Administração</li>
+
         <li>
             <a href="<?= BASE_URL ?>/admin/categorias.php"
                class="sidebar-link <?= $currentFile === 'categorias.php' ? 'active' : '' ?>">
@@ -59,6 +61,9 @@ $isAdmin     = in_array($role, ['admin', 'editor']);
                 <span>Configurações</span>
             </a>
         </li>
+
+        <li class="sidebar-section-label">Sistema</li>
+
         <li>
             <?php $updInfo = upd_readVersion(); ?>
             <a href="<?= BASE_URL ?>/admin/atualizacao.php"
@@ -93,6 +98,8 @@ $isAdmin     = in_array($role, ['admin', 'editor']);
             </a>
         </li>
         <?php endif; ?>
+
+        <li><div class="sidebar-divider mt-2"></div></li>
 
         <li>
             <a href="<?= BASE_URL ?>/admin/perfil.php"
