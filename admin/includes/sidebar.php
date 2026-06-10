@@ -1,7 +1,8 @@
 <?php
-$currentFile = basename($_SERVER['PHP_SELF']);
-$role        = $_SESSION['role'] ?? 'user';
-$isAdmin     = in_array($role, ['admin', 'editor']);
+$currentFile  = basename($_SERVER['PHP_SELF']);
+$role         = $_SESSION['role'] ?? 'user';
+$isAdminRole  = $role === 'admin';
+$isEditorRole = in_array($role, ['admin', 'editor']);
 ?>
 <aside class="admin-sidebar" id="adminSidebar">
     <ul class="sidebar-menu list-unstyled mb-0">
@@ -19,25 +20,25 @@ $isAdmin     = in_array($role, ['admin', 'editor']);
             <a href="<?= BASE_URL ?>/admin/curriculos.php"
                class="sidebar-link <?= $currentFile === 'curriculos.php' ? 'active' : '' ?>">
                 <i class="bi bi-file-person"></i>
-                <span><?= $isAdmin ? 'Currículos' : 'Meu Currículo' ?></span>
+                <span><?= $isEditorRole ? 'Currículos' : 'Meu Currículo' ?></span>
             </a>
         </li>
         <li>
             <a href="<?= BASE_URL ?>/admin/declaracao.php"
                class="sidebar-link <?= $currentFile === 'declaracao.php' ? 'active' : '' ?>">
                 <i class="bi bi-file-earmark-text"></i>
-                <span><?= $isAdmin ? 'Declarações' : 'Minha Declaração' ?></span>
+                <span><?= $isEditorRole ? 'Declarações' : 'Minha Declaração' ?></span>
             </a>
         </li>
         <li>
             <a href="<?= BASE_URL ?>/admin/carteira.php"
                class="sidebar-link <?= $currentFile === 'carteira.php' ? 'active' : '' ?>">
                 <i class="bi bi-credit-card-2-front"></i>
-                <span><?= $isAdmin ? 'Carteira' : 'Minha Carteira' ?></span>
+                <span><?= $isEditorRole ? 'Carteira' : 'Minha Carteira' ?></span>
             </a>
         </li>
 
-        <?php if ($isAdmin): ?>
+        <?php if ($isAdminRole): ?>
         <li class="sidebar-section-label">Administração</li>
 
         <li>

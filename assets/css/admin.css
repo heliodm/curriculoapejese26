@@ -196,6 +196,7 @@
     font-size: .78rem; padding: .18rem 0; color: var(--text-muted);
 }
 .completion-item.done { color: #198754; }
+.completion-item.secretaria { color: #adb5bd; font-style: italic; }
 .completion-item i { font-size: .82rem; flex-shrink: 0; }
 
 /* ===== Tables ===== */
