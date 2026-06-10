@@ -207,7 +207,7 @@ function upd_executeUpdate(): array {
 
         echo "Copiando arquivos…\n";
         copyDirectory($dirs[0], SITE_ROOT, [
-            'config/database.php', 'install.lock', 'assets/uploads', 'logs', '.htaccess', 'version.json',
+            'config/database.php', 'config/env.php', 'install.lock', 'assets/uploads', 'logs', '.htaccess', 'version.json',
         ]);
         deleteDirectory($tmpDir);
 

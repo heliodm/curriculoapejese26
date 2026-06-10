@@ -52,6 +52,9 @@ define('UPLOAD_URL',       BASE_URL  . '/assets/uploads/');
 define('MAX_UPLOAD_SIZE',  5 * 1024 * 1024); // 5 MB
 define('ALLOWED_IMG_TYPES', ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 
+// Per-request CSP nonce — used in <script nonce="..."> tags and the CSP header below
+define('CSP_NONCE', base64_encode(random_bytes(16)));
+
 header('X-Frame-Options: SAMEORIGIN');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
@@ -70,9 +73,6 @@ header(
     . "connect-src 'self'; "
     . "frame-ancestors 'none';"
 );
-
-// Per-request CSP nonce — used in <script nonce="..."> tags and the CSP header below
-define('CSP_NONCE', base64_encode(random_bytes(16)));
 
 require_once SITE_ROOT . '/config/database.php';
 require_once SITE_ROOT . '/includes/functions.php';
