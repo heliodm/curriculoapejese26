@@ -41,7 +41,14 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="<?= BASE_URL ?>/admin/perfil.php"><i class="bi bi-person-gear me-2"></i>Meu Perfil</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>/logout.php"><i class="bi bi-box-arrow-right me-2"></i>Sair</a></li>
+                    <li>
+                        <form method="POST" action="<?= BASE_URL ?>/logout.php" class="m-0">
+                            <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
+                            <button type="submit" class="dropdown-item text-danger">
+                                <i class="bi bi-box-arrow-right me-2"></i>Sair
+                            </button>
+                        </form>
+                    </li>
                 </ul>
             </div>
         </div>

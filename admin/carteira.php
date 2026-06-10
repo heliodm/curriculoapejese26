@@ -470,7 +470,7 @@ function renderMiniCard(array $u, string $globalVal, array $colors, bool $large 
     </div>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
 document.getElementById('filtroCarteira').addEventListener('input', function () {
     const q = this.value.toLowerCase();
     document.querySelectorAll('#tblCarteira tbody tr').forEach(tr => {

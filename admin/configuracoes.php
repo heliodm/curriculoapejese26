@@ -422,7 +422,7 @@ include __DIR__ . '/includes/header.php';
     </div>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
 // Auto-open tab via URL hash
 const tabMap = {
     '#tabGithub':  'tabGithubBtn',

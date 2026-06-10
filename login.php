@@ -23,6 +23,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $username = sanitize($_POST['username'] ?? '');
         $password = $_POST['password'] ?? '';
         if (login($username, $password)) {
+            // login() sets either user_id (full) or 2fa_uid (pending 2FA)
+            if (!empty($_SESSION['2fa_uid'])) {
+                redirect(BASE_URL . '/admin/2fa.php');
+            }
             redirect($redirect);
         } else {
             $error = 'Usuário ou senha incorretos.';
@@ -463,7 +467,7 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
+<script nonce="<?= CSP_NONCE ?>">
 function togglePass() {
     const f = document.getElementById('passwordField');
     const i = document.getElementById('passIcon');

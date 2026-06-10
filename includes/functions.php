@@ -315,6 +315,21 @@ function ensureLogIpColumn(): void {
     }
 }
 
+function ensureUserTotpColumns(): void {
+    $cols = [
+        'totp_secret'  => "VARCHAR(64) NULL DEFAULT NULL",
+        'totp_enabled' => "TINYINT(1) NOT NULL DEFAULT 0",
+    ];
+    foreach ($cols as $col => $def) {
+        try {
+            db()->query("SELECT `{$col}` FROM users LIMIT 0");
+        } catch (\Exception $e) {
+            try { db()->exec("ALTER TABLE users ADD COLUMN `{$col}` {$def}"); }
+            catch (\Exception $ex) {}
+        }
+    }
+}
+
 function rateLimitCheck(string $action, int $maxAttempts = 5, int $windowSecs = 300): bool {
     $ip  = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     $key = $action . ':' . $ip;
@@ -348,6 +363,11 @@ function rateLimitCheck(string $action, int $maxAttempts = 5, int $windowSecs = 
 function rateLimitClear(string $action): void {
     $ip  = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     $key = $action . ':' . $ip;
+    try { db()->prepare("DELETE FROM rate_limits WHERE rate_key = ?")->execute([$key]); }
+    catch (\Exception $e) {}
+}
+
+function rateLimitClearKey(string $key): void {
     try { db()->prepare("DELETE FROM rate_limits WHERE rate_key = ?")->execute([$key]); }
     catch (\Exception $e) {}
 }

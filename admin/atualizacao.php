@@ -360,7 +360,7 @@ include __DIR__ . '/includes/header.php';
     </div>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
 function confirmarUpdate(form) {
     if (!confirm('Confirmar atualização do sistema?\n\nOs arquivos de configuração e uploads serão preservados.\nOs arquivos de código serão substituídos pela versão mais recente do GitHub.')) {
         return false;

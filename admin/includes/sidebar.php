@@ -118,10 +118,13 @@ $isAdmin     = in_array($role, ['admin', 'editor']);
             </a>
         </li>
         <li>
-            <a href="<?= BASE_URL ?>/logout.php" class="sidebar-link sidebar-exit">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Sair</span>
-            </a>
+            <form method="POST" action="<?= BASE_URL ?>/logout.php" class="m-0">
+                <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
+                <button type="submit" class="sidebar-link sidebar-exit w-100">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Sair</span>
+                </button>
+            </form>
         </li>
 
     </ul>

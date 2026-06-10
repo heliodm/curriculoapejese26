@@ -1,4 +1,8 @@
 <?php
+// Load DB credentials from env.php (created by install.php; never committed to git)
+$__envFile = __DIR__ . '/env.php';
+if (is_file($__envFile)) require_once $__envFile;
+
 $__isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on')
     || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
 
@@ -55,9 +59,24 @@ header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
 if ($__isHttps) {
     header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 }
+$__nonce = CSP_NONCE;
+header(
+    "Content-Security-Policy: "
+    . "default-src 'self'; "
+    . "script-src 'nonce-{$__nonce}' https://cdn.jsdelivr.net; "
+    . "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+    . "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
+    . "img-src 'self' data: https://api.qrserver.com; "
+    . "connect-src 'self'; "
+    . "frame-ancestors 'none';"
+);
+
+// Per-request CSP nonce — used in <script nonce="..."> tags and the CSP header below
+define('CSP_NONCE', base64_encode(random_bytes(16)));
 
 require_once SITE_ROOT . '/config/database.php';
 require_once SITE_ROOT . '/includes/functions.php';
+require_once SITE_ROOT . '/includes/totp.php';
 require_once SITE_ROOT . '/includes/updater.php';
 require_once SITE_ROOT . '/includes/auth.php';
 
@@ -69,6 +88,7 @@ try { ensureUserExtendedColumns(); } catch (\Exception $e) { /* DB not ready (e.
 try { ensureLogTables();           } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
 try { ensureRateLimitTable();      } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
 try { ensureLogIpColumn();         } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
+try { ensureUserTotpColumns();     } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
 
 // Probabilistic cleanup (~1% of requests): expired tokens, old logs, stale rate-limit rows
 if (mt_rand(1, 100) === 1) {

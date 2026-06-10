@@ -427,7 +427,7 @@ if (in_array($acao, ['novo', 'editar'])) {
         </div>
     </div>
 
-    <script>
+    <script nonce="<?= CSP_NONCE ?>">
     // Foto preview
     document.getElementById('photoInput').addEventListener('change', function () {
         const file = this.files[0];
@@ -653,7 +653,7 @@ include __DIR__ . '/includes/header.php';
     <?php endif; ?>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
 function copyResLink(url, btn) {
     if (navigator.clipboard) {
         navigator.clipboard.writeText(url).then(function () {

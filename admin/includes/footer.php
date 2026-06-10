@@ -10,9 +10,12 @@
                     <i class="bi bi-globe me-1"></i>Ver site público
                 </a>
                 <span class="mx-2 opacity-25">|</span>
-                <a href="<?= BASE_URL ?>/logout.php">
-                    <i class="bi bi-box-arrow-right me-1"></i>Sair
-                </a>
+                <form method="POST" action="<?= BASE_URL ?>/logout.php" class="d-inline m-0">
+                    <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
+                    <button type="submit" class="btn-link-footer">
+                        <i class="bi bi-box-arrow-right me-1"></i>Sair
+                    </button>
+                </form>
             </span>
         </footer>
 
@@ -24,7 +27,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?= BASE_URL ?>/assets/js/admin.js"></script>
-<script>
+<script nonce="<?= CSP_NONCE ?>">
 (function () {
     var forms = document.querySelectorAll('form[data-unsaved]');
     if (!forms.length) {

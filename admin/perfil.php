@@ -5,7 +5,47 @@ require_once __DIR__ . '/includes/auth_check.php';
 $myUserId = (int)$_SESSION['user_id'];
 $error    = '';
 
-// SAVE
+// 2FA: setup / confirm / disable actions
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['totp_action'])) {
+    if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
+        flash('danger', 'Token de segurança inválido.');
+        redirect(BASE_URL . '/admin/perfil.php');
+    }
+    $action = $_POST['totp_action'];
+
+    if ($action === 'generate') {
+        // Generate a new secret and store it (not yet enabled)
+        $secret = Totp::generateSecret();
+        db()->prepare("UPDATE users SET totp_secret=?, totp_enabled=0 WHERE id=?")
+            ->execute([$secret, $myUserId]);
+        flash('info', 'QR code gerado. Escaneie e confirme com o código antes de ativar.');
+        redirect(BASE_URL . '/admin/perfil.php#totp');
+
+    } elseif ($action === 'confirm') {
+        $row  = db()->prepare("SELECT totp_secret FROM users WHERE id=?")->execute([$myUserId]) ? null : null;
+        $stmt = db()->prepare("SELECT totp_secret FROM users WHERE id=?");
+        $stmt->execute([$myUserId]);
+        $row  = $stmt->fetch();
+        $code = preg_replace('/\D/', '', $_POST['totp_code'] ?? '');
+        if ($row && $row['totp_secret'] && (new Totp($row['totp_secret']))->verify($code)) {
+            db()->prepare("UPDATE users SET totp_enabled=1 WHERE id=?")->execute([$myUserId]);
+            logUserAction($myUserId, 'totp_ativado', '2FA ativado pelo usuário.');
+            flash('success', 'Autenticação em duas etapas ativada com sucesso.');
+        } else {
+            flash('danger', 'Código incorreto. Tente novamente.');
+        }
+        redirect(BASE_URL . '/admin/perfil.php#totp');
+
+    } elseif ($action === 'disable') {
+        db()->prepare("UPDATE users SET totp_enabled=0, totp_secret=NULL WHERE id=?")
+            ->execute([$myUserId]);
+        logUserAction($myUserId, 'totp_desativado', '2FA desativado pelo usuário.');
+        flash('warning', 'Autenticação em duas etapas desativada.');
+        redirect(BASE_URL . '/admin/perfil.php#totp');
+    }
+}
+
+// SAVE profile
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
         flash('danger', 'Token de segurança inválido.');
@@ -231,16 +271,97 @@ include __DIR__ . '/includes/header.php';
                 <?php endforeach; ?>
             </div>
         </div>
+
+        <!-- 2FA Card -->
+        <?php
+        $totpEnabled = !empty($myUser['totp_enabled']);
+        $totpSecret  = $myUser['totp_secret'] ?? '';
+        $siteName2fa = getSetting('site_name', 'APEJESE');
+        $totpUri     = ($totpSecret && !$totpEnabled)
+            ? (new Totp($totpSecret))->getUri($siteName2fa, $myUser['username'])
+            : '';
+        ?>
+        <div class="card admin-card mt-3" id="totp">
+            <div class="card-header">
+                <i class="bi bi-shield-lock me-1"></i>Autenticação em Duas Etapas (2FA)
+                <?php if ($totpEnabled): ?>
+                <span class="badge bg-success ms-2" style="font-size:.65rem;">ATIVA</span>
+                <?php else: ?>
+                <span class="badge bg-secondary ms-2" style="font-size:.65rem;">INATIVA</span>
+                <?php endif; ?>
+            </div>
+            <div class="card-body" style="font-size:.88rem;">
+                <?php if ($totpEnabled): ?>
+                <p class="mb-3 text-muted">A autenticação em duas etapas está <strong class="text-success">ativada</strong>. Você precisará do código do aplicativo autenticador a cada login.</p>
+                <form method="POST">
+                    <?= csrfField() ?>
+                    <input type="hidden" name="totp_action" value="disable">
+                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                            onclick="return confirm('Desativar 2FA reduz a segurança da conta. Confirma?')">
+                        <i class="bi bi-shield-x me-1"></i>Desativar 2FA
+                    </button>
+                </form>
+
+                <?php elseif ($totpSecret): ?>
+                <p class="mb-2 text-muted">Escaneie o QR code com Google Authenticator, Authy ou similar, depois insira o código para confirmar.</p>
+                <div class="mb-3" id="totp-qr" data-uri="<?= e($totpUri) ?>"></div>
+                <p class="mb-1 text-muted" style="font-size:.78rem;">Ou insira a chave manual:</p>
+                <code class="d-block mb-3" style="font-size:.8rem;letter-spacing:.1em;word-break:break-all;"><?= e($totpSecret) ?></code>
+                <form method="POST" class="d-flex gap-2 align-items-end flex-wrap">
+                    <?= csrfField() ?>
+                    <input type="hidden" name="totp_action" value="confirm">
+                    <div>
+                        <label class="form-label mb-1" style="font-size:.78rem;">Código de confirmação</label>
+                        <input type="text" name="totp_code" class="form-control form-control-sm"
+                               inputmode="numeric" maxlength="6" pattern="\d{6}"
+                               placeholder="000000" required style="width:130px;">
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-success">
+                        <i class="bi bi-check-lg me-1"></i>Ativar 2FA
+                    </button>
+                </form>
+                <form method="POST" class="mt-2">
+                    <?= csrfField() ?>
+                    <input type="hidden" name="totp_action" value="generate">
+                    <button type="submit" class="btn btn-sm btn-link p-0 text-muted">Gerar novo QR code</button>
+                </form>
+
+                <?php else: ?>
+                <p class="mb-3 text-muted">A autenticação em duas etapas adiciona uma camada extra de segurança. Após ativar, você precisará de um código do aplicativo autenticador a cada login.</p>
+                <form method="POST">
+                    <?= csrfField() ?>
+                    <input type="hidden" name="totp_action" value="generate">
+                    <button type="submit" class="btn btn-sm btn-primary-custom">
+                        <i class="bi bi-shield-plus me-1"></i>Configurar 2FA
+                    </button>
+                </form>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
 function toggleF(fId, iId) {
     const f = document.getElementById(fId);
     const i = document.getElementById(iId);
     if (f.type === 'password') { f.type = 'text'; i.className = 'bi bi-eye-slash'; }
     else { f.type = 'password'; i.className = 'bi bi-eye'; }
 }
+
+// Inline QR code via canvas (no external server)
+(function () {
+    var el = document.getElementById('totp-qr');
+    if (!el) return;
+    var uri = el.getAttribute('data-uri');
+    if (!uri) return;
+    // Simple text fallback — full QR requires a JS library
+    el.innerHTML = '<div class="alert alert-info py-2" style="font-size:.78rem;">'
+        + '<i class="bi bi-info-circle me-1"></i>'
+        + 'Use a chave manual acima no seu aplicativo autenticador, '
+        + 'ou escaneie com um app que suporte URIs otpauth://'
+        + '</div>';
+})();
 </script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

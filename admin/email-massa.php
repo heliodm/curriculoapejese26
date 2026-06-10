@@ -180,7 +180,7 @@ include __DIR__ . '/includes/header.php';
     </div>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
 var counts = {
     todos:         <?= (int)($counts['todos']         ?? 0) ?>,
     adimplentes:   <?= (int)($counts['adimplentes']   ?? 0) ?>,

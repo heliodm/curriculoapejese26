@@ -1,0 +1,16 @@
+# DB / environment credentials — never commit
+config/env.php
+
+# Runtime-generated lock files
+install.lock
+
+# Uploaded files — too large and user-specific
+assets/uploads/
+
+# Editor / OS artefacts
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

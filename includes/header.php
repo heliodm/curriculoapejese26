@@ -62,8 +62,14 @@ $menuItems = getMenuItems();
                             <li><a class="dropdown-item" href="<?= BASE_URL ?>/admin/index.php">
                                 <i class="bi bi-speedometer2 me-2 text-primary"></i>Painel</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>/logout.php">
-                                <i class="bi bi-box-arrow-right me-2"></i>Sair</a></li>
+                            <li>
+                                <form method="POST" action="<?= BASE_URL ?>/logout.php" class="m-0">
+                                    <input type="hidden" name="csrf_token" value="<?= e(csrfToken()) ?>">
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Sair
+                                    </button>
+                                </form>
+                            </li>
                         </ul>
                     </li>
                     <?php else: ?>
@@ -80,7 +86,7 @@ $menuItems = getMenuItems();
     <div class="header-gold-line"></div>
 </header>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
 (function () {
     var header = document.getElementById('siteHeader');
     function onScroll() {

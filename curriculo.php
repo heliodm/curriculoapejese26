@@ -263,7 +263,7 @@ if ($r['category_id']):
     </div>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
 function showQRCode() {
     new bootstrap.Modal(document.getElementById('qrModal')).show();
 }

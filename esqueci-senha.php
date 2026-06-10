@@ -241,7 +241,7 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
     </div>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
 document.querySelectorAll('.field-input-group input').forEach(function (inp) {
     inp.addEventListener('focus', function () { this.parentElement.querySelector('.field-icon').style.color = 'var(--primary)'; });
     inp.addEventListener('blur',  function () { this.parentElement.querySelector('.field-icon').style.color = ''; });

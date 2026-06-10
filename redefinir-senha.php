@@ -251,7 +251,7 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
     </div>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
 function toggleP(fId, iId) {
     const f = document.getElementById(fId);
     const i = document.getElementById(iId);

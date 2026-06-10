@@ -425,7 +425,7 @@ include __DIR__ . '/includes/header.php';
     </div>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
 document.getElementById('filtroUsuario').addEventListener('input', function () {
     const q = this.value.toLowerCase();
     document.querySelectorAll('#tblUsuarios tbody tr').forEach(tr => {

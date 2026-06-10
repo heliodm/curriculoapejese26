@@ -504,7 +504,7 @@ include __DIR__ . '/includes/header.php';
     </div>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
 const cpfField = document.getElementById('cpfField');
 if (cpfField) {
     cpfField.addEventListener('input', function () {
