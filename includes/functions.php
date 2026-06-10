@@ -79,18 +79,30 @@ function uploadFile(array $file, string $subdir, array $allowedTypes = [], int $
     $mimeType = $finfo->file($file['tmp_name']);
     $allowed  = $allowedTypes ?: ALLOWED_IMG_TYPES;
     if (!in_array($mimeType, $allowed)) return false;
-    $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = bin2hex(random_bytes(16)) . '.' . strtolower($ext);
-    $destDir  = UPLOAD_DIR . trim($subdir, '/') . '/';
+    // Extensão derivada do MIME real do conteúdo — nunca do nome enviado
+    // pelo cliente, que poderia terminar em .php e ser executado no servidor.
+    $extMap = [
+        'image/jpeg' => 'jpg',  'image/png'  => 'png',
+        'image/gif'  => 'gif',  'image/webp' => 'webp',
+        'image/svg+xml' => 'svg', 'application/pdf' => 'pdf',
+    ];
+    $ext = $extMap[$mimeType] ?? null;
+    if ($ext === null) return false;
+    $subdir = basename(trim($subdir, '/')); // sem path traversal no subdiretório
+    $filename = bin2hex(random_bytes(16)) . '.' . $ext;
+    $destDir  = UPLOAD_DIR . $subdir . '/';
     if (!is_dir($destDir)) mkdir($destDir, 0755, true);
     if (!move_uploaded_file($file['tmp_name'], $destDir . $filename)) return false;
-    return trim($subdir, '/') . '/' . $filename;
+    return $subdir . '/' . $filename;
 }
 
 function deleteUpload(string $relativePath): void {
-    if ($relativePath) {
-        $full = UPLOAD_DIR . ltrim($relativePath, '/');
-        if (file_exists($full)) unlink($full);
+    if (!$relativePath) return;
+    $full = realpath(UPLOAD_DIR . ltrim($relativePath, '/'));
+    $base = realpath(UPLOAD_DIR);
+    // Só remove arquivos que realmente estão dentro de uploads/
+    if ($full !== false && $base !== false && strncmp($full, $base . DIRECTORY_SEPARATOR, strlen($base) + 1) === 0) {
+        unlink($full);
     }
 }
 

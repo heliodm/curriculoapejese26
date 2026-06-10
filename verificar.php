@@ -3,6 +3,10 @@ require_once __DIR__ . '/config/config.php';
 
 $matricula = sanitize($_GET['m'] ?? '');
 
+// Limita consultas por IP para dificultar enumeração de matrículas
+$rateLimited = $matricula !== '' && !rateLimitCheck('verificar', 30, 300);
+if ($rateLimited) $matricula = '';
+
 $user = null;
 if ($matricula !== '') {
     $stmt = db()->prepare(
@@ -86,7 +90,12 @@ body {
                 </button>
             </div>
         </form>
-        <?php if (!$matricula): ?>
+        <?php if ($rateLimited): ?>
+        <div class="alert alert-warning text-center" style="font-size:.85rem;">
+            <i class="bi bi-hourglass-split me-1"></i>
+            Muitas consultas em pouco tempo. Aguarde alguns minutos e tente novamente.
+        </div>
+        <?php elseif (!$matricula): ?>
         <div class="alert alert-info text-center" style="font-size:.85rem;">
             <i class="bi bi-qr-code-scan me-1"></i>
             Informe a matrícula acima ou escaneie o QR Code da carteira de associado.

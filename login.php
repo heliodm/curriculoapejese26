@@ -4,7 +4,15 @@ require_once __DIR__ . '/config/config.php';
 if (isLoggedIn()) redirect(BASE_URL . '/admin/index.php');
 
 $error    = '';
-$redirect = sanitize($_GET['redirect'] ?? BASE_URL . '/admin/index.php');
+
+// Anti open-redirect: só aceita caminhos internos (relativos ou começando pelo BASE_URL)
+$redirect = sanitize($_POST['redirect'] ?? ($_GET['redirect'] ?? ''));
+$isLocal  = $redirect !== ''
+    && (strncmp($redirect, BASE_URL . '/', strlen(BASE_URL) + 1) === 0
+        || (strncmp($redirect, '/', 1) === 0 && strncmp($redirect, '//', 2) !== 0));
+if (!$isLocal) {
+    $redirect = BASE_URL . '/admin/index.php';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCsrf($_POST['csrf_token'] ?? '')) {

@@ -29,8 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tokenRow) {
     } else {
         $pass1 = $_POST['password']  ?? '';
         $pass2 = $_POST['password2'] ?? '';
-        if (strlen($pass1) < 6) {
-            $error = 'A senha deve ter ao menos 6 caracteres.';
+        if (strlen($pass1) < 8) {
+            $error = 'A senha deve ter ao menos 8 caracteres.';
         } elseif ($pass1 !== $pass2) {
             $error = 'As senhas não coincidem.';
         } else {
@@ -216,7 +216,7 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
             <div class="field-wrap">
                 <label for="pw1">Nova Senha</label>
                 <div class="field-input-group">
-                    <input type="password" name="password" id="pw1" required minlength="6" autofocus placeholder="Mínimo 6 caracteres">
+                    <input type="password" name="password" id="pw1" required minlength="8" autofocus placeholder="Mínimo 8 caracteres">
                     <i class="bi bi-lock field-icon"></i>
                     <button type="button" class="toggle-pass" onclick="toggleP('pw1','ic1')" tabindex="-1">
                         <i class="bi bi-eye" id="ic1"></i>
@@ -226,7 +226,7 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
             <div class="field-wrap">
                 <label for="pw2">Confirmar Nova Senha</label>
                 <div class="field-input-group">
-                    <input type="password" name="password2" id="pw2" required minlength="6" placeholder="Repita a senha">
+                    <input type="password" name="password2" id="pw2" required minlength="8" placeholder="Repita a senha">
                     <i class="bi bi-lock-fill field-icon"></i>
                     <button type="button" class="toggle-pass" onclick="toggleP('pw2','ic2')" tabindex="-1">
                         <i class="bi bi-eye" id="ic2"></i>

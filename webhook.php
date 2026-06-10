@@ -28,14 +28,18 @@ $event     = $_SERVER['HTTP_X_GITHUB_EVENT'] ?? '';
 $secret    = getSetting('github_webhook_secret', '');
 $branch    = getSetting('github_branch', 'main');
 
-// Verify HMAC signature when a secret is configured
-if ($secret !== '') {
-    $sig      = $_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? '';
-    $expected = 'sha256=' . hash_hmac('sha256', $payload, $secret);
-    if (!hash_equals($expected, $sig)) {
-        http_response_code(401);
-        exit(json_encode(['error' => 'Unauthorized — invalid signature']));
-    }
+// O segredo é obrigatório: sem ele, qualquer requisição poderia disparar
+// um deploy. Configure em Configurações › GitHub e no webhook do GitHub.
+if ($secret === '') {
+    http_response_code(403);
+    exit(json_encode(['error' => 'Webhook desabilitado — configure o segredo em Configurações › GitHub.']));
+}
+
+$sig      = $_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? '';
+$expected = 'sha256=' . hash_hmac('sha256', $payload, $secret);
+if (!hash_equals($expected, $sig)) {
+    http_response_code(401);
+    exit(json_encode(['error' => 'Unauthorized — invalid signature']));
 }
 
 // Ignore non-push events

@@ -134,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($username))  $errors[] = 'Nome de usuário é obrigatório.';
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'E-mail inválido.';
     if ($editId === 0 && empty($password)) $errors[] = 'Senha é obrigatória para novo usuário.';
-    if (!empty($password) && strlen($password) < 6) $errors[] = 'Senha deve ter ao menos 6 caracteres.';
+    if (!empty($password) && strlen($password) < 8) $errors[] = 'Senha deve ter ao menos 8 caracteres.';
     if (!empty($cpf) && !validateCpf($cpf)) $errors[] = 'CPF inválido. Verifique os dígitos.';
 
     if (empty($errors)) {
@@ -302,7 +302,7 @@ include __DIR__ . '/includes/header.php';
                             <div class="input-group">
                                 <input type="password" name="password" class="form-control" id="pwdField"
                                        placeholder="<?= $editing ? 'Deixe em branco para manter' : '' ?>"
-                                       <?= $editing ? '' : 'required' ?> minlength="6">
+                                       <?= $editing ? '' : 'required' ?> minlength="8">
                                 <button type="button" class="btn btn-outline-secondary" onclick="toggleField('pwdField','pwdIcon')">
                                     <i class="bi bi-eye" id="pwdIcon"></i>
                                 </button>

@@ -1,4 +1,13 @@
 <?php
+$__isHttps = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on')
+    || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+
+ini_set('session.cookie_httponly', 1);
+ini_set('session.cookie_samesite', 'Strict');
+ini_set('session.use_strict_mode', 1);
+ini_set('session.gc_maxlifetime', 3600);
+if ($__isHttps) ini_set('session.cookie_secure', 1);
+
 session_start();
 
 define('APP_NAME',    'Sistema de Currículos');
@@ -39,15 +48,13 @@ define('UPLOAD_URL',       BASE_URL  . '/assets/uploads/');
 define('MAX_UPLOAD_SIZE',  5 * 1024 * 1024); // 5 MB
 define('ALLOWED_IMG_TYPES', ['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 
-ini_set('session.cookie_httponly', 1);
-ini_set('session.cookie_samesite', 'Strict');
-ini_set('session.use_strict_mode', 1);
-ini_set('session.gc_maxlifetime', 3600);
-
 header('X-Frame-Options: SAMEORIGIN');
 header('X-Content-Type-Options: nosniff');
-header('X-XSS-Protection: 1; mode=block');
 header('Referrer-Policy: strict-origin-when-cross-origin');
+header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+if ($__isHttps) {
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+}
 
 require_once SITE_ROOT . '/config/database.php';
 require_once SITE_ROOT . '/includes/functions.php';

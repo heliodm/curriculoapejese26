@@ -40,8 +40,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dbUser = trim($_POST['db_user'] ?? 'root');
     $dbPass = $_POST['db_pass'] ?? '';
 
+    $admUser  = trim($_POST['admin_user']  ?? '');
+    $admName  = trim($_POST['admin_name']  ?? '');
+    $admEmail = trim($_POST['admin_email'] ?? '');
+    $admPass  = $_POST['admin_pass'] ?? '';
+
     $errors  = [];
     $success = [];
+
+    if ($admUser === '' || !preg_match('/^[a-zA-Z0-9._-]{3,50}$/', $admUser)) {
+        $errors[] = 'Usuário admin inválido (3–50 caracteres: letras, números, ponto, hífen, underline).';
+    }
+    if ($admName === '') $errors[] = 'Nome do administrador é obrigatório.';
+    if (!filter_var($admEmail, FILTER_VALIDATE_EMAIL)) $errors[] = 'E-mail do administrador inválido.';
+    if (strlen($admPass) < 8) $errors[] = 'A senha do administrador deve ter ao menos 8 caracteres.';
+
+    if (!empty($errors)) {
+        echo '<div class="alert alert-danger"><strong>Corrija os erros abaixo:</strong><ul class="mb-0 mt-2">';
+        foreach ($errors as $err) echo '<li>' . htmlspecialchars($err) . '</li>';
+        echo '</ul></div><a href="install.php" class="btn btn-secondary">Voltar</a>';
+        echo '</div></div></div></body></html>';
+        exit;
+    }
 
     try {
         // Connect without DB first
@@ -170,13 +190,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $success[] = "Tabelas criadas com sucesso.";
 
-        // Default admin user
-        $adminExists = $pdo->prepare("SELECT id FROM users WHERE username = 'heliodm'");
-        $adminExists->execute();
+        // Admin user (credenciais definidas pelo instalador)
+        $adminExists = $pdo->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
+        $adminExists->execute([$admUser, $admEmail]);
         if (!$adminExists->fetch()) {
             $pdo->prepare("INSERT INTO users (username, full_name, email, password, role) VALUES (?,?,?,?,?)")
-                ->execute(['heliodm', 'Hélio DM', 'heliodm@outlook.com', password_hash('Helio74*', PASSWORD_BCRYPT), 'admin']);
-            $success[] = "Usuário administrador <strong>heliodm</strong> criado.";
+                ->execute([$admUser, $admName, $admEmail, password_hash($admPass, PASSWORD_BCRYPT), 'admin']);
+            $success[] = "Usuário administrador <strong>" . htmlspecialchars($admUser) . "</strong> criado.";
         } else {
             $success[] = "Usuário administrador já existia.";
         }
@@ -259,6 +279,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <form method="POST">
+    <h6 class="fw-bold mb-2">Banco de Dados</h6>
     <div class="row g-3">
         <div class="col-md-6">
             <label class="form-label fw-bold">Host MySQL</label>
@@ -279,13 +300,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <hr class="my-3">
+    <h6 class="fw-bold mb-2">Conta do Administrador</h6>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Usuário</label>
+            <input type="text" name="admin_user" class="form-control" required
+                   pattern="[a-zA-Z0-9._-]{3,50}" placeholder="ex: admin">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Nome Completo</label>
+            <input type="text" name="admin_name" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">E-mail</label>
+            <input type="email" name="admin_email" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Senha <small class="text-muted fw-normal">(mín. 8 caracteres)</small></label>
+            <input type="password" name="admin_pass" class="form-control" required minlength="8">
+        </div>
+    </div>
+
+    <hr class="my-3">
     <h6>O que será criado:</h6>
     <ul class="small text-muted">
         <li>Tabelas: <code>settings</code>, <code>categories</code>, <code>users</code>, <code>resumes</code>, <code>menu_items</code></li>
-        <li>Usuário admin: <strong>heliodm</strong> / senha: <strong>Helio74*</strong></li>
+        <li>Usuário administrador com as credenciais informadas acima</li>
         <li>11 categorias profissionais padrão</li>
         <li>Configurações e menu padrão</li>
     </ul>
+    <div class="alert alert-warning small mb-3">
+        <strong>Importante:</strong> após concluir a instalação, remova os arquivos
+        <code>install.php</code> e <code>migrate_v1_1.php</code> do servidor.
+    </div>
 
     <button type="submit" class="btn btn-success btn-lg">
         <i class="me-2">🚀</i>Instalar Sistema

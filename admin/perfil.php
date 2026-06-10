@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $errors = [];
     if (empty($full_name)) $errors[] = 'Nome completo é obrigatório.';
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'E-mail inválido.';
-    if (!empty($password) && strlen($password) < 6) $errors[] = 'Senha deve ter ao menos 6 caracteres.';
+    if (!empty($password) && strlen($password) < 8) $errors[] = 'Senha deve ter ao menos 8 caracteres.';
     if (!empty($password) && $password !== $password2) $errors[] = 'As senhas não coincidem.';
 
     // Check email uniqueness
@@ -145,7 +145,7 @@ include __DIR__ . '/includes/header.php';
                             <label class="form-label">Nova Senha</label>
                             <div class="input-group">
                                 <input type="password" name="password" class="form-control" id="pw1"
-                                       minlength="6" placeholder="Deixe em branco para manter">
+                                       minlength="8" placeholder="Deixe em branco para manter">
                                 <button type="button" class="btn btn-outline-secondary" onclick="toggleF('pw1','ic1')">
                                     <i class="bi bi-eye" id="ic1"></i>
                                 </button>
@@ -155,7 +155,7 @@ include __DIR__ . '/includes/header.php';
                             <label class="form-label">Confirmar Nova Senha</label>
                             <div class="input-group">
                                 <input type="password" name="password2" class="form-control" id="pw2"
-                                       minlength="6" placeholder="Repita a nova senha">
+                                       minlength="8" placeholder="Repita a nova senha">
                                 <button type="button" class="btn btn-outline-secondary" onclick="toggleF('pw2','ic2')">
                                     <i class="bi bi-eye" id="ic2"></i>
                                 </button>

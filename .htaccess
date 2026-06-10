@@ -1,7 +1,7 @@
 Options -Indexes
 
 # Protect sensitive files
-<FilesMatch "^(install\.lock|composer\.(json|lock)|\.env)$">
+<FilesMatch "^(install\.lock|composer\.(json|lock)|\.env|version\.(json|txt))$">
     Require all denied
 </FilesMatch>
 
