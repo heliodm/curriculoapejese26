@@ -5,13 +5,19 @@ Options -Indexes
     Require all denied
 </FilesMatch>
 
-RewriteEngine On
+<IfModule mod_rewrite.c>
+    RewriteEngine On
 
-# Force HTTPS (uncomment in production)
-# RewriteCond %{HTTPS} off
-# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    # Force HTTPS (uncomment in production)
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# Clean curriculum URLs: /slug → curriculo.php?s=slug
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^([a-z0-9][a-z0-9\-]*)$ curriculo.php?s=$1 [QSA,L]
+    # Clean curriculum URLs: /slug → curriculo.php?s=slug
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^([a-z0-9][a-z0-9\-]+)$ curriculo.php?s=$1 [QSA,L]
+</IfModule>
+
+# Fallback when mod_rewrite is unavailable or AllowOverride restricts it:
+# unknown paths hit 404 → curriculo.php extracts the slug from REDIRECT_URL
+ErrorDocument 404 /curriculo.php

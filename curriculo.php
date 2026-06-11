@@ -2,13 +2,24 @@
 require_once __DIR__ . '/config/config.php';
 
 $slug = sanitize($_GET['s'] ?? '');
-if (!$slug) redirect(BASE_URL . '/index.php');
 
-// 301: redirect old /curriculo.php?s=slug to clean /slug
-if (str_contains($_SERVER['REQUEST_URI'] ?? '', 'curriculo.php')) {
-    header('Location: ' . BASE_URL . '/' . $slug, true, 301);
-    exit;
+// PHP fallback: extract slug from REQUEST_URI when called via ErrorDocument 404
+// (handles servers where mod_rewrite is unavailable or AllowOverride is restricted)
+if (!$slug) {
+    $reqPath  = parse_url($_SERVER['REDIRECT_URL'] ?? $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+    $candidate = trim($reqPath, '/');
+    // Strip any base-path prefix so subdirectory installs work too
+    $basePath = rtrim(parse_url(BASE_URL, PHP_URL_PATH) ?? '', '/');
+    if ($basePath && str_starts_with($candidate, ltrim($basePath, '/'))) {
+        $candidate = ltrim(substr($candidate, strlen(ltrim($basePath, '/'))), '/');
+    }
+    if ($candidate && preg_match('/^[a-z0-9][a-z0-9\-]*$/', $candidate)) {
+        http_response_code(200); // override the inherited 404 status
+        $slug = $candidate;
+    }
 }
+
+if (!$slug) redirect(BASE_URL . '/index.php');
 
 $consentSQL = hasConsentColumn()    ? ' AND r.consent = 1' : '';
 $adimpSQL   = hasAdimplenteColumn() ? ' AND (u.adimplente = 1 OR r.user_id IS NULL)' : '';
