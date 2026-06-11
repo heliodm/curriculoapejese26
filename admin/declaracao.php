@@ -1,7 +1,11 @@
 <?php
 require_once dirname(__DIR__) . '/config/config.php';
 require_once __DIR__ . '/includes/auth_check.php';
-// All authenticated users may access; admin-only actions checked below.
+// Editors use Usuários + E-mail em Massa; this page is for admins and regular users only.
+if (($_SESSION['role'] ?? '') === 'editor') {
+    flash('warning', 'Editores não têm acesso à área de declarações.');
+    redirect(BASE_URL . '/admin/index.php');
+}
 
 $isAdminUser = isAdmin();
 $myUserId    = (int)$_SESSION['user_id'];

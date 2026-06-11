@@ -1,16 +1,21 @@
 <?php
 require_once dirname(__DIR__) . '/config/config.php';
 require_once __DIR__ . '/includes/auth_check.php';
-requireAdmin();
+requireEditor();
 
-$acao = sanitize($_GET['acao'] ?? ($_POST['acao'] ?? 'listar'));
-$id   = (int)($_GET['id'] ?? ($_POST['id'] ?? 0));
+$acao       = sanitize($_GET['acao'] ?? ($_POST['acao'] ?? 'listar'));
+$id         = (int)($_GET['id'] ?? ($_POST['id'] ?? 0));
+$isEditorUser = !isAdmin();
 
-// DELETE — POST only
+// DELETE — admin only
 if ($acao === 'excluir' && $id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!verifyCsrf($_POST['csrf_token'] ?? '')) { flash('danger', 'Token inválido.'); }
-    elseif ($id === (int)$_SESSION['user_id']) { flash('danger', 'Não é possível excluir seu próprio usuário.'); }
-    else {
+    if ($isEditorUser) {
+        flash('danger', 'Apenas administradores podem excluir usuários.');
+    } elseif (!verifyCsrf($_POST['csrf_token'] ?? '')) {
+        flash('danger', 'Token inválido.');
+    } elseif ($id === (int)$_SESSION['user_id']) {
+        flash('danger', 'Não é possível excluir seu próprio usuário.');
+    } else {
         $u = db()->prepare("SELECT photo FROM users WHERE id = ?");
         $u->execute([$id]);
         $row = $u->fetch();
@@ -22,9 +27,11 @@ if ($acao === 'excluir' && $id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect(BASE_URL . '/admin/usuarios.php');
 }
 
-// TOGGLE ACTIVE — POST only
+// TOGGLE ACTIVE — admin only
 if ($acao === 'toggle' && $id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (verifyCsrf($_POST['csrf_token'] ?? '') && $id !== (int)$_SESSION['user_id']) {
+    if ($isEditorUser) {
+        flash('danger', 'Apenas administradores podem alterar o status de usuários.');
+    } elseif (verifyCsrf($_POST['csrf_token'] ?? '') && $id !== (int)$_SESSION['user_id']) {
         db()->prepare("UPDATE users SET active = NOT active WHERE id = ?")->execute([$id]);
         logUserAction($id, 'toggle_ativo', 'Status ativo alternado.');
         flash('success', 'Status atualizado.');
@@ -32,8 +39,12 @@ if ($acao === 'toggle' && $id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect(BASE_URL . '/admin/usuarios.php');
 }
 
-// TOGGLE ADIMPLENTE — POST only
+// TOGGLE ADIMPLENTE — admin only
 if ($acao === 'toggle_adimplente' && $id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($isEditorUser) {
+        flash('danger', 'Apenas administradores podem alterar a situação financeira.');
+        redirect(BASE_URL . '/admin/usuarios.php');
+    }
     if (verifyCsrf($_POST['csrf_token'] ?? '')) {
         $stmt = db()->prepare("SELECT full_name, email, adimplente FROM users WHERE id = ?");
         $stmt->execute([$id]);
@@ -64,8 +75,12 @@ if ($acao === 'toggle_adimplente' && $id > 0 && $_SERVER['REQUEST_METHOD'] === '
     redirect(BASE_URL . '/admin/usuarios.php');
 }
 
-// RESET SENHA — POST only
+// RESET SENHA — admin only
 if ($acao === 'reset_senha' && $id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($isEditorUser) {
+        flash('danger', 'Apenas administradores podem redefinir senhas.');
+        redirect(BASE_URL . '/admin/usuarios.php');
+    }
     if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
         flash('danger', 'Token inválido.');
     } else {
@@ -106,6 +121,11 @@ if ($acao === 'editar' && $id > 0) {
     $stmt->execute([$id]);
     $editing = $stmt->fetch();
     if (!$editing) { flash('warning', 'Usuário não encontrado.'); redirect(BASE_URL . '/admin/usuarios.php'); }
+    // Editors cannot edit admin users
+    if ($isEditorUser && ($editing['role'] ?? '') === 'admin') {
+        flash('danger', 'Editores não podem modificar usuários administradores.');
+        redirect(BASE_URL . '/admin/usuarios.php');
+    }
 }
 
 // SAVE
@@ -117,7 +137,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $full_name             = sanitize($_POST['full_name']             ?? '');
     $username              = sanitize($_POST['username']              ?? '');
     $email                 = filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL);
-    $role                  = in_array($_POST['role'] ?? '', ['admin','editor','user']) ? $_POST['role'] : 'user';
+    $allowedRoles = $isEditorUser ? ['editor', 'user'] : ['admin', 'editor', 'user'];
+    $role         = in_array($_POST['role'] ?? '', $allowedRoles) ? $_POST['role'] : 'user';
     $active                = isset($_POST['active'])      ? 1 : 0;
     $adimplente            = isset($_POST['adimplente'])  ? 1 : 0;
     $matricula_apejese     = sanitize($_POST['matricula_apejese']     ?? '');
@@ -232,7 +253,7 @@ include __DIR__ . '/includes/header.php';
 <div class="admin-page-header">
     <h3><i class="bi bi-people me-2"></i>Usuários</h3>
     <div class="d-flex gap-2">
-        <?php if ($acao !== 'novo' && !$editing): ?>
+        <?php if ($acao !== 'novo' && !$editing && !$isEditorUser): ?>
         <a href="<?= BASE_URL ?>/admin/exportar.php" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-download me-1"></i>Exportar CSV
         </a>
@@ -287,7 +308,8 @@ include __DIR__ . '/includes/header.php';
                         <div class="col-md-3">
                             <label class="form-label">Nível de Acesso</label>
                             <select name="role" class="form-select">
-                                <?php foreach ($roleLabels as $val => $label): ?>
+                                <?php foreach ($roleLabels as $val => $label):
+                                    if ($isEditorUser && $val === 'admin') continue; ?>
                                 <option value="<?= $val ?>" <?= ($editing['role'] ?? 'user') === $val ? 'selected' : '' ?>><?= $label ?></option>
                                 <?php endforeach; ?>
                             </select>
@@ -442,7 +464,9 @@ include __DIR__ . '/includes/header.php';
                         <td class="col-hide-md"><?= $u['total_resumes'] ?></td>
                         <td class="text-muted small col-hide-md"><?= $u['last_login'] ? date('d/m/Y H:i', strtotime($u['last_login'])) : '—' ?></td>
                         <td>
-                            <?php if ($u['id'] !== (int)$_SESSION['user_id']): ?>
+                            <?php if ($isEditorUser): ?>
+                            <span class="badge <?= $u['active'] ? 'bg-success' : 'bg-secondary' ?>"><?= $u['active'] ? 'Ativo' : 'Inativo' ?></span>
+                            <?php elseif ($u['id'] !== (int)$_SESSION['user_id']): ?>
                             <form method="POST" class="d-inline" data-no-unsaved>
                                 <?= csrfField() ?>
                                 <input type="hidden" name="acao" value="toggle">
@@ -458,6 +482,9 @@ include __DIR__ . '/includes/header.php';
                             <?php endif; ?>
                         </td>
                         <td class="col-hide-sm">
+                            <?php if ($isEditorUser): ?>
+                            <span class="badge <?= ($u['adimplente'] ?? 1) ? 'bg-success' : 'bg-danger' ?>"><?= ($u['adimplente'] ?? 1) ? 'Adimplente' : 'Inadimplente' ?></span>
+                            <?php else: ?>
                             <form method="POST" class="d-inline" data-no-unsaved>
                                 <?= csrfField() ?>
                                 <input type="hidden" name="acao" value="toggle_adimplente">
@@ -468,11 +495,15 @@ include __DIR__ . '/includes/header.php';
                                     <?= ($u['adimplente'] ?? 1) ? 'Adimplente' : 'Inadimplente' ?>
                                 </button>
                             </form>
+                            <?php endif; ?>
                         </td>
                         <td class="text-nowrap">
+                            <?php if (!$isEditorUser || $u['role'] !== 'admin'): ?>
                             <a href="?acao=editar&id=<?= $u['id'] ?>" class="btn btn-xs btn-outline-primary me-1" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </a>
+                            <?php endif; ?>
+                            <?php if (!$isEditorUser): ?>
                             <form method="POST" class="d-inline" data-no-unsaved
                                   data-confirm="Redefinir senha de <?= e($u['full_name']) ?>?">
                                 <?= csrfField() ?>
@@ -492,6 +523,7 @@ include __DIR__ . '/includes/header.php';
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </form>
+                            <?php endif; ?>
                             <?php endif; ?>
                         </td>
                     </tr>

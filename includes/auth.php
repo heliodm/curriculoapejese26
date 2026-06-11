@@ -85,7 +85,15 @@ function requireAdmin(): void {
     requireAuth();
     if (!isAdmin()) {
         flash('danger', 'Acesso negado. Apenas administradores.');
-        redirect(BASE_URL . '/admin/declaracao.php');
+        redirect(BASE_URL . '/admin/index.php');
+    }
+}
+
+function requireEditor(): void {
+    requireAuth();
+    if (!isEditor()) {
+        flash('danger', 'Acesso negado.');
+        redirect(BASE_URL . '/admin/index.php');
     }
 }
 

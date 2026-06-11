@@ -288,6 +288,12 @@ $totalViews     = (int)(db()->query("SELECT SUM(views) FROM resumes")->fetchColu
 $pendingConsent = hasConsentColumn()
     ? (int)db()->query("SELECT COUNT(*) FROM resumes WHERE consent=0")->fetchColumn()
     : 0;
+$totalUsers = (int)db()->query("SELECT COUNT(*) FROM users WHERE active = 1")->fetchColumn();
+$editorAdimplentes = $editorInadimplentes = null;
+if (hasAdimplenteColumn()) {
+    $editorAdimplentes   = (int)db()->query("SELECT COUNT(*) FROM users WHERE adimplente=1 AND active=1")->fetchColumn();
+    $editorInadimplentes = (int)db()->query("SELECT COUNT(*) FROM users WHERE adimplente=0 AND active=1")->fetchColumn();
+}
 
 $recentResumes = db()->query(
     "SELECT r.*, c.name AS category_name
@@ -308,7 +314,7 @@ $recentResumes = db()->query(
 
 <!-- Stats editor -->
 <div class="row g-3 mb-3">
-    <div class="col-6 col-md-4">
+    <div class="col-6 col-md">
         <a href="<?= BASE_URL ?>/admin/curriculos.php" class="stat-card text-decoration-none">
             <div class="stat-icon bg-secondary-light"><i class="bi bi-file-person"></i></div>
             <div class="stat-info">
@@ -317,7 +323,7 @@ $recentResumes = db()->query(
             </div>
         </a>
     </div>
-    <div class="col-6 col-md-4">
+    <div class="col-6 col-md">
         <a href="<?= BASE_URL ?>/admin/curriculos.php?filtro_status=ativo" class="stat-card stat-primary text-decoration-none">
             <div class="stat-icon bg-primary-light"><i class="bi bi-globe2"></i></div>
             <div class="stat-info">
@@ -326,7 +332,34 @@ $recentResumes = db()->query(
             </div>
         </a>
     </div>
-    <div class="col-6 col-md-4">
+    <div class="col-6 col-md">
+        <a href="<?= BASE_URL ?>/admin/usuarios.php" class="stat-card stat-accent text-decoration-none">
+            <div class="stat-icon bg-accent-light"><i class="bi bi-people"></i></div>
+            <div class="stat-info">
+                <div class="stat-value"><?= number_format($totalUsers) ?></div>
+                <div class="stat-label">Associados</div>
+            </div>
+        </a>
+    </div>
+    <?php if ($editorAdimplentes !== null): ?>
+    <div class="col-6 col-md">
+        <a href="<?= BASE_URL ?>/admin/usuarios.php" class="stat-card stat-green text-decoration-none">
+            <div class="stat-icon bg-green-light"><i class="bi bi-check-circle"></i></div>
+            <div class="stat-info">
+                <div class="stat-value"><?= $editorAdimplentes ?></div>
+                <div class="stat-label">
+                    Adimplentes
+                    <?php if ($editorInadimplentes > 0): ?>
+                    <span class="badge bg-danger ms-1" style="font-size:.6rem;vertical-align:middle;">
+                        <?= $editorInadimplentes ?> inad.
+                    </span>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </a>
+    </div>
+    <?php endif; ?>
+    <div class="col-6 col-md">
         <div class="stat-card stat-teal">
             <div class="stat-icon bg-teal-light"><i class="bi bi-eye"></i></div>
             <div class="stat-info">
@@ -346,15 +379,15 @@ $recentResumes = db()->query(
         </a>
     </div>
     <div class="col-6 col-md-4">
-        <a href="<?= BASE_URL ?>/admin/declaracao.php" class="quick-action-card">
-            <i class="bi bi-file-earmark-text"></i>
-            <span>Declarações</span>
+        <a href="<?= BASE_URL ?>/admin/usuarios.php?acao=novo" class="quick-action-card">
+            <i class="bi bi-person-add"></i>
+            <span>Novo Usuário</span>
         </a>
     </div>
     <div class="col-6 col-md-4">
-        <a href="<?= BASE_URL ?>/admin/carteira.php" class="quick-action-card">
-            <i class="bi bi-credit-card-2-front"></i>
-            <span>Carteiras</span>
+        <a href="<?= BASE_URL ?>/admin/email-massa.php" class="quick-action-card">
+            <i class="bi bi-envelope-paper"></i>
+            <span>E-mail em Massa</span>
         </a>
     </div>
 </div>

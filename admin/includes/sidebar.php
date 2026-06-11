@@ -3,6 +3,7 @@ $currentFile  = basename($_SERVER['PHP_SELF']);
 $role         = $_SESSION['role'] ?? 'user';
 $isAdminRole  = $role === 'admin';
 $isEditorRole = in_array($role, ['admin', 'editor']);
+$isEditorOnly = $role === 'editor';
 ?>
 <aside class="admin-sidebar" id="adminSidebar">
     <ul class="sidebar-menu list-unstyled mb-0">
@@ -23,20 +24,41 @@ $isEditorRole = in_array($role, ['admin', 'editor']);
                 <span><?= $isEditorRole ? 'Currículos' : 'Meu Currículo' ?></span>
             </a>
         </li>
+        <?php if (!$isEditorOnly): ?>
         <li>
             <a href="<?= BASE_URL ?>/admin/declaracao.php"
                class="sidebar-link <?= $currentFile === 'declaracao.php' ? 'active' : '' ?>">
                 <i class="bi bi-file-earmark-text"></i>
-                <span><?= $isEditorRole ? 'Declarações' : 'Minha Declaração' ?></span>
+                <span><?= $isAdminRole ? 'Declarações' : 'Minha Declaração' ?></span>
             </a>
         </li>
         <li>
             <a href="<?= BASE_URL ?>/admin/carteira.php"
                class="sidebar-link <?= $currentFile === 'carteira.php' ? 'active' : '' ?>">
                 <i class="bi bi-credit-card-2-front"></i>
-                <span><?= $isEditorRole ? 'Carteira' : 'Minha Carteira' ?></span>
+                <span><?= $isAdminRole ? 'Carteira' : 'Minha Carteira' ?></span>
             </a>
         </li>
+        <?php endif; ?>
+
+        <?php if ($isEditorRole): ?>
+        <li class="sidebar-section-label">Gerenciamento</li>
+
+        <li>
+            <a href="<?= BASE_URL ?>/admin/usuarios.php"
+               class="sidebar-link <?= $currentFile === 'usuarios.php' ? 'active' : '' ?>">
+                <i class="bi bi-people"></i>
+                <span>Usuários</span>
+            </a>
+        </li>
+        <li>
+            <a href="<?= BASE_URL ?>/admin/email-massa.php"
+               class="sidebar-link <?= $currentFile === 'email-massa.php' ? 'active' : '' ?>">
+                <i class="bi bi-envelope-paper"></i>
+                <span>E-mail em Massa</span>
+            </a>
+        </li>
+        <?php endif; ?>
 
         <?php if ($isAdminRole): ?>
         <li class="sidebar-section-label">Administração</li>
@@ -46,13 +68,6 @@ $isEditorRole = in_array($role, ['admin', 'editor']);
                class="sidebar-link <?= $currentFile === 'categorias.php' ? 'active' : '' ?>">
                 <i class="bi bi-tags"></i>
                 <span>Categorias</span>
-            </a>
-        </li>
-        <li>
-            <a href="<?= BASE_URL ?>/admin/usuarios.php"
-               class="sidebar-link <?= $currentFile === 'usuarios.php' ? 'active' : '' ?>">
-                <i class="bi bi-people"></i>
-                <span>Usuários</span>
             </a>
         </li>
         <li>
@@ -82,13 +97,6 @@ $isEditorRole = in_array($role, ['admin', 'editor']);
                class="sidebar-link <?= $currentFile === 'exportar.php' ? 'active' : '' ?>">
                 <i class="bi bi-download"></i>
                 <span>Exportar</span>
-            </a>
-        </li>
-        <li>
-            <a href="<?= BASE_URL ?>/admin/email-massa.php"
-               class="sidebar-link <?= $currentFile === 'email-massa.php' ? 'active' : '' ?>">
-                <i class="bi bi-envelope-paper"></i>
-                <span>E-mail em Massa</span>
             </a>
         </li>
         <li>
