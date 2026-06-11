@@ -57,11 +57,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($err === UPLOAD_ERR_NO_FILE || !$name) continue;
 
                 if ($err !== UPLOAD_ERR_OK) {
-                    $errors[] = "Erro no arquivo "{$name}".";
+                    $errors[] = "Erro no arquivo \"{$name}\".";
                     continue;
                 }
                 if ($size > $maxAttachSize) {
-                    $errors[] = ""{$name}" excede 10 MB.";
+                    $errors[] = "\"{$name}\" excede 10 MB.";
                     continue;
                 }
 
@@ -69,13 +69,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $mimeReal = $finfo->file($tmp);
 
                 if (!in_array($ext, $attachExts) || !in_array($mimeReal, $attachMimes)) {
-                    $errors[] = "Tipo não permitido: "{$name}".";
+                    $errors[] = "Tipo não permitido: \"{$name}\".";
                     continue;
                 }
 
                 $data = file_get_contents($tmp);
                 if ($data === false) {
-                    $errors[] = "Não foi possível ler "{$name}".";
+                    $errors[] = "Não foi possível ler \"{$name}\".";
                     continue;
                 }
 
