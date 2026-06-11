@@ -397,6 +397,51 @@ function sendMail(string $to, string $toName, string $subject, string $htmlBody)
     return @mail($to, "=?UTF-8?B?" . base64_encode($subject) . "?=", $htmlBody, $headers);
 }
 
+function sendMailWithAttachments(
+    string $to,
+    string $toName,
+    string $subject,
+    string $htmlBody,
+    array $attachments = []
+): bool {
+    if (!getSetting('mail_enabled', '0')) return false;
+    $from     = getSetting('mail_from', '');
+    $fromName = getSetting('mail_from_name', 'APEJESE');
+    if (!$from || !filter_var($from, FILTER_VALIDATE_EMAIL)) return false;
+
+    $encSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
+    $fromHeader = '=?UTF-8?B?' . base64_encode($fromName) . '?= <' . $from . '>';
+
+    if (empty($attachments)) {
+        $headers = "From: {$fromHeader}\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8";
+        return @mail($to, $encSubject, $htmlBody, $headers);
+    }
+
+    $boundary = '----=_Part_' . bin2hex(random_bytes(8));
+    $headers  = "From: {$fromHeader}\r\n"
+              . "MIME-Version: 1.0\r\n"
+              . "Content-Type: multipart/mixed; boundary=\"{$boundary}\"";
+
+    $body  = "--{$boundary}\r\n";
+    $body .= "Content-Type: text/html; charset=UTF-8\r\n";
+    $body .= "Content-Transfer-Encoding: base64\r\n\r\n";
+    $body .= chunk_split(base64_encode($htmlBody)) . "\r\n";
+
+    foreach ($attachments as $att) {
+        if (empty($att['data']) || empty($att['name'])) continue;
+        $safeName = preg_replace('/[^\w.\-]/', '_', $att['name']);
+        $mimeType = $att['type'] ?? 'application/octet-stream';
+        $body .= "--{$boundary}\r\n";
+        $body .= "Content-Type: {$mimeType}; name=\"{$safeName}\"\r\n";
+        $body .= "Content-Transfer-Encoding: base64\r\n";
+        $body .= "Content-Disposition: attachment; filename=\"{$safeName}\"\r\n\r\n";
+        $body .= chunk_split(base64_encode($att['data'])) . "\r\n";
+    }
+
+    $body .= "--{$boundary}--";
+    return @mail($to, $encSubject, $body, $headers);
+}
+
 function emailTemplate(string $content, string $subject = ''): string {
     $siteName = htmlspecialchars(getSetting('site_name', 'APEJESE'), ENT_QUOTES);
     $logoPath = getSetting('logo', '');
