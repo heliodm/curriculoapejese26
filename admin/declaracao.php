@@ -6,10 +6,17 @@ require_once __DIR__ . '/includes/auth_check.php';
 $isAdminUser = isAdmin();
 $myUserId    = (int)$_SESSION['user_id'];
 
+/* ── Portuguese month names (strftime + utf8_encode both deprecated in PHP 8.x) */
+function ptMonth(int $month = 0): string {
+    static $months = ['janeiro','fevereiro','março','abril','maio','junho',
+                      'julho','agosto','setembro','outubro','novembro','dezembro'];
+    $m = $month > 0 ? $month : (int)date('n');
+    return $months[$m - 1] ?? '';
+}
+
 /* ── Modo impressão: output limpo sem admin chrome ─────────────────────── */
 if (isset($_GET['imprimir']) && isset($_GET['user_id'])) {
     $uid = (int)$_GET['user_id'];
-    // Non-admins can only print their own declaration
     if (!$isAdminUser && $uid !== $myUserId) {
         redirect(BASE_URL . '/admin/declaracao.php');
     }
@@ -26,6 +33,7 @@ if (isset($_GET['imprimir']) && isset($_GET['user_id'])) {
     $local      = getSetting('declaracao_local', 'Aracaju/SE');
     $situacao   = ($user['adimplente'] ?? 1) ? 'ADIMPLENTE' : 'INADIMPLENTE';
     $nascFormatado = !empty($user['data_nascimento']) ? date('d/m/Y', strtotime($user['data_nascimento'])) : '';
+    $dataExtenso   = date('d') . ' de ' . ptMonth() . ' de ' . date('Y');
 
     $vars = [
         '{nome}'      => $user['full_name'],
@@ -33,7 +41,7 @@ if (isset($_GET['imprimir']) && isset($_GET['user_id'])) {
         '{matricula}' => $user['matricula_apejese'] ?? '',
         '{situacao}'  => $situacao,
         '{nasc}'      => $nascFormatado,
-        '{data}'      => date('d \d\e F \d\e Y'),
+        '{data}'      => $dataExtenso,
         '{local}'     => $local,
     ];
     $textoRender = strtr($texto, $vars);
@@ -88,7 +96,7 @@ html, body { background: #f0f0f0; font-family: 'Times New Roman', Times, serif; 
 </head>
 <body>
 <div class="print-bar">
-    <button onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
+    <button id="btnPrint">🖨 Imprimir / Salvar PDF</button>
     <a href="<?= BASE_URL ?>/admin/declaracao.php<?= $isAdminUser ? '?user_id=' . $uid : '' ?>">← Voltar</a>
     <span style="margin-left:auto;font-size:.85rem;opacity:.7;"><?= e($user['full_name']) ?></span>
 </div>
@@ -99,7 +107,7 @@ html, body { background: #f0f0f0; font-family: 'Times New Roman', Times, serif; 
         <?php endif; ?>
         <div class="decl-title">DECLARAÇÃO</div>
         <div class="decl-body"><?= e($textoRender) ?></div>
-        <div class="decl-local"><?= e($local) ?>, <?= date('d') ?> de <?= utf8_encode(strftime('%B', time())) ?> de <?= date('Y') ?></div>
+        <div class="decl-local"><?= e($local) ?>, <?= $dataExtenso ?></div>
         <div class="decl-sign">
             <?php if ($assinatura): ?>
             <img src="<?= UPLOAD_URL . e($assinatura) ?>" alt="Assinatura">
@@ -111,6 +119,9 @@ html, body { background: #f0f0f0; font-family: 'Times New Roman', Times, serif; 
         </div>
     </div>
 </div>
+<script nonce="<?= CSP_NONCE ?>">
+document.getElementById('btnPrint').addEventListener('click', () => window.print());
+</script>
 </body>
 </html>
 <?php
@@ -131,6 +142,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     saveSetting('declaracao_assinante', sanitize($_POST['declaracao_assinante'] ?? ''));
     saveSetting('declaracao_cargo',     sanitize($_POST['declaracao_cargo']     ?? ''));
     saveSetting('declaracao_local',     sanitize($_POST['declaracao_local']     ?? 'Aracaju/SE'));
+
+    // Remove image files if checkboxes ticked
+    if (!empty($_POST['remove_fundo'])) {
+        $old = getSetting('declaracao_fundo');
+        if ($old) deleteUpload($old);
+        saveSetting('declaracao_fundo', '');
+    }
+    if (!empty($_POST['remove_assinatura'])) {
+        $old = getSetting('declaracao_assinatura');
+        if ($old) deleteUpload($old);
+        saveSetting('declaracao_assinatura', '');
+    }
 
     foreach (['declaracao_fundo' => 'decl_bg', 'declaracao_assinatura' => 'decl_sign'] as $key => $field) {
         if (!empty($_FILES[$field]['name'])) {
@@ -157,8 +180,8 @@ $cargo      = getSetting('declaracao_cargo', '');
 $local      = getSetting('declaracao_local', 'Aracaju/SE');
 $fundo      = getSetting('declaracao_fundo', '');
 $assinatura = getSetting('declaracao_assinatura', '');
+$dataExtenso = date('d') . ' de ' . ptMonth() . ' de ' . date('Y');
 
-// Admin: selectable user | Regular user: always their own
 if ($isAdminUser) {
     $userId = (int)($_GET['user_id'] ?? 0);
 } else {
@@ -172,7 +195,6 @@ if ($userId > 0) {
     $selectedUser = $stmt->fetch();
 }
 
-// For non-admins without a loaded user (shouldn't happen), load their own anyway
 if (!$isAdminUser && !$selectedUser) {
     $stmt = db()->prepare("SELECT * FROM users WHERE id = ?");
     $stmt->execute([$myUserId]);
@@ -206,7 +228,7 @@ include __DIR__ . '/includes/header.php';
 </div>
 
 <?php if (!$isAdminUser): ?>
-<!-- ── Visão do usuário regular: somente sua própria declaração ─────────── -->
+<!-- ── Visão do usuário regular ─────────────────────────────────────────── -->
 <?php if ($selectedUser):
     $situacao = ($selectedUser['adimplente'] ?? 1) ? 'ADIMPLENTE' : 'INADIMPLENTE';
     $vars = [
@@ -215,7 +237,7 @@ include __DIR__ . '/includes/header.php';
         '{matricula}' => $selectedUser['matricula_apejese'] ?? '',
         '{situacao}'  => $situacao,
         '{nasc}'      => !empty($selectedUser['data_nascimento']) ? date('d/m/Y', strtotime($selectedUser['data_nascimento'])) : '',
-        '{data}'      => date('d/m/Y'),
+        '{data}'      => $dataExtenso,
         '{local}'     => $local,
     ];
     $prev = strtr($texto, $vars);
@@ -231,17 +253,17 @@ include __DIR__ . '/includes/header.php';
                 </a>
             </div>
             <div class="card-body">
-                <div style="background:#f9f9f9;border:1px solid #e0e0e0;border-radius:8px;padding:24px;font-family:'Times New Roman',serif;font-size:.92rem;line-height:1.8;white-space:pre-wrap;">
-                    <div style="text-align:center;font-weight:bold;font-size:1.05rem;letter-spacing:3px;text-transform:uppercase;color:#1b3a6b;border-bottom:2px solid #1b3a6b;padding-bottom:8px;margin-bottom:18px;">DECLARAÇÃO</div>
-                    <?= e($prev) ?>
-                    <div style="text-align:center;margin-top:24px;"><?= e($local) ?>, <?= date('d/m/Y') ?></div>
+                <div class="decl-preview">
+                    <div class="decl-preview-title">DECLARAÇÃO</div>
+                    <div class="decl-preview-body"><?= e($prev) ?></div>
+                    <div class="decl-preview-local"><?= e($local) ?>, <?= $dataExtenso ?></div>
                     <?php if ($assinante): ?>
-                    <div style="text-align:center;margin-top:36px;">
+                    <div class="decl-preview-sign">
                         <?php if ($assinatura): ?>
-                        <img src="<?= UPLOAD_URL . e($assinatura) ?>" style="max-width:150px;max-height:60px;display:block;margin:0 auto 6px;">
+                        <img src="<?= UPLOAD_URL . e($assinatura) ?>" class="decl-preview-sign-img" alt="Assinatura">
                         <?php endif; ?>
-                        <div style="display:inline-block;min-width:200px;border-top:1px solid #333;padding-top:5px;"><?= e($assinante) ?></div>
-                        <?php if ($cargo): ?><div style="font-size:.8rem;color:#666;"><?= e($cargo) ?></div><?php endif; ?>
+                        <div class="decl-preview-sign-line"><?= e($assinante) ?></div>
+                        <?php if ($cargo): ?><div class="decl-preview-sign-cargo"><?= e($cargo) ?></div><?php endif; ?>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -277,22 +299,22 @@ include __DIR__ . '/includes/header.php';
                     '{matricula}' => $selectedUser['matricula_apejese'] ?? '',
                     '{situacao}'  => $situacao,
                     '{nasc}'      => !empty($selectedUser['data_nascimento']) ? date('d/m/Y', strtotime($selectedUser['data_nascimento'])) : '',
-                    '{data}'      => date('d/m/Y'),
+                    '{data}'      => $dataExtenso,
                     '{local}'     => $local,
                 ];
                 $prev = strtr($texto, $vars);
                 ?>
-                <div style="background:#f9f9f9;border:1px solid #e0e0e0;border-radius:8px;padding:20px;font-family:'Times New Roman',serif;font-size:.9rem;line-height:1.8;white-space:pre-wrap;">
-                    <div style="text-align:center;font-weight:bold;font-size:1rem;letter-spacing:3px;text-transform:uppercase;color:#1b3a6b;border-bottom:2px solid #1b3a6b;padding-bottom:8px;margin-bottom:16px;">DECLARAÇÃO</div>
-                    <?= e($prev) ?>
-                    <div style="text-align:center;margin-top:20px;"><?= e($local) ?>, <?= date('d/m/Y') ?></div>
+                <div class="decl-preview" id="declPreview">
+                    <div class="decl-preview-title">DECLARAÇÃO</div>
+                    <div class="decl-preview-body" id="declPreviewBody"><?= e($prev) ?></div>
+                    <div class="decl-preview-local"><?= e($local) ?>, <?= $dataExtenso ?></div>
                     <?php if ($assinante): ?>
-                    <div style="text-align:center;margin-top:30px;">
+                    <div class="decl-preview-sign">
                         <?php if ($assinatura): ?>
-                        <img src="<?= UPLOAD_URL . e($assinatura) ?>" style="max-width:130px;max-height:50px;display:block;margin:0 auto 4px;">
+                        <img src="<?= UPLOAD_URL . e($assinatura) ?>" class="decl-preview-sign-img" alt="Assinatura">
                         <?php endif; ?>
-                        <div style="display:inline-block;min-width:180px;border-top:1px solid #333;padding-top:4px;"><?= e($assinante) ?></div>
-                        <?php if ($cargo): ?><div style="font-size:.8rem;color:#666;"><?= e($cargo) ?></div><?php endif; ?>
+                        <div class="decl-preview-sign-line"><?= e($assinante) ?></div>
+                        <?php if ($cargo): ?><div class="decl-preview-sign-cargo"><?= e($cargo) ?></div><?php endif; ?>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -301,6 +323,13 @@ include __DIR__ . '/includes/header.php';
                         <i class="bi bi-arrow-left me-1"></i>Voltar à lista
                     </a>
                 </div>
+            </div>
+        </div>
+        <?php else: ?>
+        <div class="card admin-card mb-4">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="bi bi-arrow-down-circle fs-3 d-block mb-2 opacity-50"></i>
+                Selecione um associado na lista abaixo para pré-visualizar a declaração.
             </div>
         </div>
         <?php endif; ?>
@@ -350,8 +379,8 @@ include __DIR__ . '/includes/header.php';
 
     <div class="col-lg-4">
         <div class="card admin-card mb-4">
-            <div class="card-header"><i class="bi bi-braces me-1"></i>Variáveis</div>
-            <div class="card-body" style="font-size:.82rem;">
+            <div class="card-header"><i class="bi bi-braces me-1"></i>Variáveis disponíveis</div>
+            <div class="card-body p-0">
                 <?php foreach ([
                     '{nome}'      => 'Nome completo',
                     '{cpf}'       => 'CPF',
@@ -359,11 +388,11 @@ include __DIR__ . '/includes/header.php';
                     '{situacao}'  => 'ADIMPLENTE / INADIMPLENTE',
                     '{nasc}'      => 'Data de nascimento',
                     '{local}'     => 'Local configurado',
-                    '{data}'      => 'Data de hoje',
+                    '{data}'      => 'Data de hoje por extenso',
                 ] as $var => $desc): ?>
-                <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0f0f0;">
-                    <code style="color:#1b3a6b;"><?= $var ?></code>
-                    <span class="text-muted"><?= $desc ?></span>
+                <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <code class="small" style="color:var(--primary);"><?= $var ?></code>
+                    <span class="text-muted small"><?= $desc ?></span>
                 </div>
                 <?php endforeach; ?>
             </div>
@@ -375,48 +404,64 @@ include __DIR__ . '/includes/header.php';
                 <form method="POST" enctype="multipart/form-data">
                     <?= csrfField() ?>
                     <div class="mb-3">
-                        <label class="form-label" style="font-size:.83rem;font-weight:700;color:var(--primary);">Texto</label>
-                        <textarea name="declaracao_texto" class="form-control" rows="8"
-                                  style="font-size:.82rem;font-family:monospace;"><?= e($texto) ?></textarea>
+                        <label class="form-label fw-bold small" style="color:var(--primary);">Texto da declaração</label>
+                        <textarea name="declaracao_texto" id="textoDecl" class="form-control"
+                                  rows="8" style="font-size:.82rem;font-family:monospace;"><?= e($texto) ?></textarea>
+                        <div class="form-text">Edite e veja o resultado na pré-visualização ao lado.</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label" style="font-size:.83rem;font-weight:700;color:var(--primary);">Local</label>
+                        <label class="form-label fw-bold small" style="color:var(--primary);">Local</label>
                         <input type="text" name="declaracao_local" class="form-control form-control-sm"
                                value="<?= e($local) ?>" placeholder="Aracaju/SE">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label" style="font-size:.83rem;font-weight:700;color:var(--primary);">Nome do Assinante</label>
+                        <label class="form-label fw-bold small" style="color:var(--primary);">Nome do Assinante</label>
                         <input type="text" name="declaracao_assinante" class="form-control form-control-sm"
                                value="<?= e($assinante) ?>" maxlength="100">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label" style="font-size:.83rem;font-weight:700;color:var(--primary);">Cargo / Título</label>
+                        <label class="form-label fw-bold small" style="color:var(--primary);">Cargo / Título</label>
                         <input type="text" name="declaracao_cargo" class="form-control form-control-sm"
                                value="<?= e($cargo) ?>" maxlength="100" placeholder="Presidente — APEJESE">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label" style="font-size:.83rem;font-weight:700;color:var(--primary);">
-                            Imagem de Fundo <span style="font-weight:400;color:#999;">(marca d'água)</span>
+                        <label class="form-label fw-bold small" style="color:var(--primary);">
+                            Imagem de Fundo <span class="fw-normal text-muted">(marca d'água)</span>
                         </label>
                         <?php if ($fundo): ?>
-                        <div class="mb-1">
-                            <img src="<?= UPLOAD_URL . e($fundo) ?>" style="max-width:80px;max-height:50px;border-radius:4px;border:1px solid #ddd;">
+                        <div class="mb-2 d-flex align-items-center gap-3">
+                            <img src="<?= UPLOAD_URL . e($fundo) ?>"
+                                 style="max-width:80px;max-height:50px;border-radius:4px;border:1px solid #ddd;" alt="Fundo atual">
+                            <div class="form-check mb-0">
+                                <input type="checkbox" name="remove_fundo" value="1"
+                                       class="form-check-input" id="chkRemoveFundo">
+                                <label class="form-check-label small text-danger fw-semibold" for="chkRemoveFundo">
+                                    <i class="bi bi-trash3 me-1"></i>Remover
+                                </label>
+                            </div>
                         </div>
                         <?php endif; ?>
                         <input type="file" name="decl_bg" class="form-control form-control-sm" accept="image/*">
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label" style="font-size:.83rem;font-weight:700;color:var(--primary);">Assinatura</label>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small" style="color:var(--primary);">Assinatura</label>
                         <?php if ($assinatura): ?>
-                        <div class="mb-1">
-                            <img src="<?= UPLOAD_URL . e($assinatura) ?>" style="max-width:120px;max-height:50px;border-radius:4px;border:1px solid #ddd;">
+                        <div class="mb-2 d-flex align-items-center gap-3">
+                            <img src="<?= UPLOAD_URL . e($assinatura) ?>"
+                                 style="max-width:120px;max-height:50px;border-radius:4px;border:1px solid #ddd;" alt="Assinatura atual">
+                            <div class="form-check mb-0">
+                                <input type="checkbox" name="remove_assinatura" value="1"
+                                       class="form-check-input" id="chkRemoveAssinatura">
+                                <label class="form-check-label small text-danger fw-semibold" for="chkRemoveAssinatura">
+                                    <i class="bi bi-trash3 me-1"></i>Remover
+                                </label>
+                            </div>
                         </div>
                         <?php endif; ?>
                         <input type="file" name="decl_sign" class="form-control form-control-sm" accept="image/*">
-                        <div class="form-text" style="font-size:.72rem;">Recomendado: PNG com fundo transparente.</div>
+                        <div class="form-text">PNG com fundo transparente recomendado.</div>
                     </div>
-                    <button type="submit" class="btn w-100"
-                            style="background:var(--primary);color:#fff;font-weight:700;border-radius:8px;padding:9px;font-size:.88rem;border:none;">
+                    <button type="submit" class="btn btn-primary-custom w-100 fw-bold">
                         <i class="bi bi-check2 me-1"></i>Salvar Configurações
                     </button>
                 </form>
@@ -426,12 +471,27 @@ include __DIR__ . '/includes/header.php';
 </div>
 
 <script nonce="<?= CSP_NONCE ?>">
-document.getElementById('filtroUsuario').addEventListener('input', function () {
-    const q = this.value.toLowerCase();
-    document.querySelectorAll('#tblUsuarios tbody tr').forEach(tr => {
-        tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
-    });
-});
+(function () {
+    // Table filter
+    const filtro = document.getElementById('filtroUsuario');
+    if (filtro) {
+        filtro.addEventListener('input', function () {
+            const q = this.value.toLowerCase();
+            document.querySelectorAll('#tblUsuarios tbody tr').forEach(tr => {
+                tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+        });
+    }
+
+    // Live preview: textarea → preview body (raw template without var substitution)
+    const textareaEl = document.getElementById('textoDecl');
+    const previewEl  = document.getElementById('declPreviewBody');
+    if (textareaEl && previewEl) {
+        textareaEl.addEventListener('input', function () {
+            previewEl.textContent = this.value;
+        });
+    }
+})();
 </script>
 <?php endif; ?>
 

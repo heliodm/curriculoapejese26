@@ -425,3 +425,56 @@ button.sidebar-link {
     align-items: center;
 }
 .btn-link-footer:hover { text-decoration: underline; }
+
+/* ===== Declaration preview (admin/declaracao.php) ===== */
+.decl-preview {
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 24px;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: .92rem;
+    line-height: 1.8;
+    white-space: pre-wrap;
+}
+.decl-preview-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.05rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+    padding-bottom: 8px;
+    margin-bottom: 18px;
+    white-space: normal;
+}
+.decl-preview-body { color: #222; }
+.decl-preview-local {
+    text-align: center;
+    margin-top: 24px;
+    font-size: .88rem;
+    color: #555;
+}
+.decl-preview-sign {
+    text-align: center;
+    margin-top: 36px;
+}
+.decl-preview-sign-img {
+    max-width: 150px;
+    max-height: 60px;
+    display: block;
+    margin: 0 auto 6px;
+}
+.decl-preview-sign-line {
+    display: inline-block;
+    min-width: 200px;
+    border-top: 1px solid #333;
+    padding-top: 5px;
+    font-size: .88rem;
+}
+.decl-preview-sign-cargo {
+    font-size: .8rem;
+    color: #666;
+    margin-top: 2px;
+}

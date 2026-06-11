@@ -23,18 +23,34 @@ function loadUserWithResume(int $uid): array|false {
 
 function getCardColors(): array {
     return [
-        'header'             => getSetting('carteira_cor_header', '#1b3a6b'),
-        'acento'             => getSetting('carteira_cor_acento', '#c9a227'),
-        'mostrar_registro'   => getSetting('carteira_mostrar_registro', '1'),
-        'mostrar_filiacao'   => getSetting('carteira_mostrar_filiacao', '1'),
+        'header'           => getSetting('carteira_cor_header', '#1b3a6b'),
+        'acento'           => getSetting('carteira_cor_acento', '#c9a227'),
+        'mostrar_registro' => getSetting('carteira_mostrar_registro', '1'),
+        'mostrar_filiacao' => getSetting('carteira_mostrar_filiacao', '1'),
     ];
 }
 
-function cardValidade(array $u, string $globalVal): string {
-    if (!empty($u['carteira_validade'])) {
-        return date('d/m/Y', strtotime($u['carteira_validade']));
+/* Normalize d/m/Y or Y-m-d to a timestamp. Returns false on failure. */
+function parseAnyDate(string $s): int|false {
+    if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', $s, $m)) {
+        return mktime(0, 0, 0, (int)$m[2], (int)$m[1], (int)$m[3]);
     }
-    return $globalVal;
+    $ts = strtotime($s);
+    return ($ts !== false && $ts > 0) ? $ts : false;
+}
+
+function cardValidade(array $u, string $globalVal): string {
+    $raw = !empty($u['carteira_validade']) ? $u['carteira_validade'] : $globalVal;
+    if (!$raw) return '';
+    $ts = parseAnyDate($raw);
+    return $ts !== false ? date('d/m/Y', $ts) : $raw;
+}
+
+/* Person placeholder SVG — used in the standalone print page (no BI icons) */
+function personSvg(string $size = '38px', string $color = '#b0bcd4'): string {
+    return '<svg viewBox="0 0 24 24" fill="' . $color . '" width="' . $size . '" height="' . $size . '" aria-hidden="true">'
+         . '<path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2c-3.33 0-10 1.67-10 5v2h20v-2c0-3.33-6.67-5-10-5z"/>'
+         . '</svg>';
 }
 
 /* ── Modo impressão ──────────────────────────────────────────────────────── */
@@ -104,7 +120,7 @@ html, body { background: #e8e8e8; font-family: Arial, Helvetica, sans-serif; }
     background: #dde3ee; display: flex; align-items: center; justify-content: center;
 }
 .card-photo img { width: 100%; height: 100%; object-fit: cover; }
-.card-photo .no-photo { font-size: 38px; color: #b0bcd4; }
+.card-photo .no-photo { display: flex; align-items: center; justify-content: center; }
 .card-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 .card-name { font-size: 11pt; font-weight: 800; color: <?= $corHeader ?>; line-height: 1.2; margin-bottom: 4px; }
 .card-profession { font-size: 8.5pt; color: #555; margin-bottom: 2px; }
@@ -138,7 +154,6 @@ html, body { background: #e8e8e8; font-family: Arial, Helvetica, sans-serif; }
     .card-body { padding: 12px 12px 0; }
     .card-photo-row { gap: 10px; margin-bottom: 10px; }
     .card-photo { width: 50px; height: 62px; border-radius: 5px; }
-    .card-photo .no-photo { font-size: 22px; }
     .card-name { font-size: 7pt; }
     .card-profession { font-size: 6pt; }
     .card-formation  { font-size: 5.5pt; }
@@ -157,14 +172,14 @@ html, body { background: #e8e8e8; font-family: Arial, Helvetica, sans-serif; }
 </head>
 <body>
 <div class="print-bar">
-    <button onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
+    <button id="btnPrint">🖨 Imprimir / Salvar PDF</button>
     <a href="<?= BASE_URL ?>/admin/carteira.php<?= $isAdminUser ? '?user_id=' . $uid : '' ?>">← Voltar</a>
     <span style="margin-left:auto;font-size:.85rem;opacity:.7;"><?= e($u['full_name']) ?></span>
 </div>
 <div class="page-wrap">
     <div class="card-outer">
         <div class="card-header-bar">
-            <img src="<?= e($logoUrl) ?>" alt="Logo" class="logo" onerror="this.style.display='none'">
+            <img id="logoImg" src="<?= e($logoUrl) ?>" alt="Logo" class="logo">
             <div class="card-header-text">
                 <h1>APEJESE</h1>
                 <p>Carteira de Associado</p>
@@ -177,7 +192,7 @@ html, body { background: #e8e8e8; font-family: Arial, Helvetica, sans-serif; }
                     <?php if ($photoUrl): ?>
                     <img src="<?= e($photoUrl) ?>" alt="Foto">
                     <?php else: ?>
-                    <span class="no-photo">👤</span>
+                    <span class="no-photo"><?= personSvg('44px') ?></span>
                     <?php endif; ?>
                 </div>
                 <div class="card-info">
@@ -231,6 +246,11 @@ html, body { background: #e8e8e8; font-family: Arial, Helvetica, sans-serif; }
         </div>
     </div>
 </div>
+<script nonce="<?= CSP_NONCE ?>">
+document.getElementById('btnPrint').addEventListener('click', () => window.print());
+var logoEl = document.getElementById('logoImg');
+if (logoEl) logoEl.addEventListener('error', function () { this.style.display = 'none'; });
+</script>
 </body>
 </html>
 <?php
@@ -247,9 +267,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('danger', 'Token de segurança inválido.');
         redirect(BASE_URL . '/admin/carteira.php');
     }
-    saveSetting('carteira_validade', sanitize($_POST['carteira_validade'] ?? ''));
+    $valRaw = sanitize($_POST['carteira_validade'] ?? '');
+    // Normalize d/m/Y → Y-m-d for consistent storage
+    if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', $valRaw, $m)) {
+        $valRaw = "{$m[3]}-{$m[2]}-{$m[1]}";
+    }
+    saveSetting('carteira_validade', $valRaw);
     flash('success', 'Configurações salvas.');
-    redirect(BASE_URL . '/admin/carteira.php');
+    redirect(BASE_URL . '/admin/carteira.php#config');
 }
 
 /* ── Dados ──────────────────────────────────────────────────────────────── */
@@ -272,6 +297,13 @@ $users = $isAdminUser
 
 $globalVal = getSetting('carteira_validade', '');
 
+// Convert stored ISO/d-m-Y to Y-m-d for the date input
+$globalValForInput = '';
+if ($globalVal) {
+    $ts = parseAnyDate($globalVal);
+    if ($ts !== false) $globalValForInput = date('Y-m-d', $ts);
+}
+
 $pageTitle = 'Carteira de Associado';
 include __DIR__ . '/includes/header.php';
 
@@ -282,28 +314,34 @@ function renderMiniCard(array $u, string $globalVal, array $colors, bool $large 
     $nasc     = !empty($u['data_nascimento']) ? date('d/m/Y', strtotime($u['data_nascimento'])) : '—';
     $situacao = ($u['adimplente'] ?? 1) ? 'ADIMPLENTE' : 'INADIMPLENTE';
     $corSit   = ($u['adimplente'] ?? 1) ? '#28a745' : '#dc3545';
-    $validade = !empty($u['carteira_validade']) ? date('d/m/Y', strtotime($u['carteira_validade'])) : $globalVal;
+    $validade = cardValidade($u, $globalVal);
     $corH     = $colors['header'];
     $corA     = $colors['acento'];
-    $w   = $large ? '280px' : '200px';
+    $w        = $large ? '280px' : '200px';
     $qrData   = $u['matricula_apejese'] ? BASE_URL . '/verificar.php?m=' . urlencode($u['matricula_apejese']) : '';
     $qrUrl    = $qrData ? 'https://api.qrserver.com/v1/create-qr-code/?size=64x64&margin=3&data=' . urlencode($qrData) : '';
+    $photoW   = $large ? '60px'  : '42px';
+    $photoH   = $large ? '74px'  : '52px';
+    $iconSz   = $large ? '2rem'  : '1.4rem';
+    $pad      = $large ? '14px 16px' : '10px 12px';
+    $gap      = $large ? '12px' : '8px';
+    $mbRow    = $large ? '12px' : '8px';
     ?>
     <div style="display:inline-block;width:<?= $w ?>;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.2);text-align:left;font-family:Arial,sans-serif;">
-        <div style="background:linear-gradient(135deg,<?= $corH ?>,<?= $corH ?>bb);padding:<?= $large ? '14px 16px' : '10px 12px' ?>;display:flex;align-items:center;gap:8px;">
+        <div style="background:linear-gradient(135deg,<?= $corH ?>,<?= $corH ?>bb);padding:<?= $pad ?>;display:flex;align-items:center;gap:8px;">
             <div style="color:#fff;line-height:1.2;">
                 <div style="font-size:<?= $large ? '10pt' : '8pt' ?>;font-weight:800;letter-spacing:1px;">APEJESE</div>
                 <div style="font-size:<?= $large ? '7pt' : '5.5pt' ?>;opacity:.7;text-transform:uppercase;">Carteira de Associado</div>
             </div>
         </div>
         <div style="height:3px;background:linear-gradient(90deg,<?= $corA ?>,<?= $corA ?>aa,<?= $corA ?>);"></div>
-        <div style="background:#fff;padding:<?= $large ? '14px 16px' : '10px 12px' ?>;">
-            <div style="display:flex;gap:<?= $large ? '12px' : '8px' ?>;margin-bottom:<?= $large ? '12px' : '8px' ?>;">
-                <div style="width:<?= $large ? '60px' : '42px' ?>;height:<?= $large ? '74px' : '52px' ?>;border-radius:5px;overflow:hidden;border:2px solid <?= $corH ?>;background:#dde3ee;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <div style="background:#fff;padding:<?= $pad ?>;">
+            <div style="display:flex;gap:<?= $gap ?>;margin-bottom:<?= $mbRow ?>;">
+                <div style="width:<?= $photoW ?>;height:<?= $photoH ?>;border-radius:5px;overflow:hidden;border:2px solid <?= $corH ?>;background:#dde3ee;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                     <?php if ($photoUrl): ?>
-                    <img src="<?= e($photoUrl) ?>" style="width:100%;height:100%;object-fit:cover;">
+                    <img src="<?= e($photoUrl) ?>" style="width:100%;height:100%;object-fit:cover;" alt="Foto">
                     <?php else: ?>
-                    <span style="font-size:<?= $large ? '26px' : '18px' ?>;">👤</span>
+                    <i class="bi bi-person-fill" style="font-size:<?= $iconSz ?>;color:#b0bcd4;"></i>
                     <?php endif; ?>
                 </div>
                 <div style="flex:1;min-width:0;">
@@ -354,7 +392,7 @@ function renderMiniCard(array $u, string $globalVal, array $colors, bool $large 
 </div>
 
 <?php if (!$isAdminUser): ?>
-<!-- ── Visão do usuário regular ─────────────────────────────── -->
+<!-- ── Visão do usuário regular ──────────────────────────────────────────── -->
 <?php if ($selectedUser): ?>
 <div class="row justify-content-center">
     <div class="col-lg-6 text-center">
@@ -377,7 +415,7 @@ function renderMiniCard(array $u, string $globalVal, array $colors, bool $large 
 <?php endif; ?>
 
 <?php else: ?>
-<!-- ── Visão do administrador ─────────────────────────────────────── -->
+<!-- ── Visão do administrador ─────────────────────────────────────────────── -->
 <div class="row g-4">
     <div class="col-lg-8">
         <?php if ($selectedUser): ?>
@@ -396,6 +434,13 @@ function renderMiniCard(array $u, string $globalVal, array $colors, bool $large 
                         <i class="bi bi-arrow-left me-1"></i>Voltar à lista
                     </a>
                 </div>
+            </div>
+        </div>
+        <?php else: ?>
+        <div class="card admin-card mb-4">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="bi bi-arrow-down-circle fs-3 d-block mb-2 opacity-50"></i>
+                Selecione um associado na lista abaixo para visualizar a carteira.
             </div>
         </div>
         <?php endif; ?>
@@ -444,24 +489,23 @@ function renderMiniCard(array $u, string $globalVal, array $colors, bool $large 
     </div>
 
     <div class="col-lg-4">
-        <div class="card admin-card mb-3">
+        <div class="card admin-card mb-3" id="config">
             <div class="card-header"><i class="bi bi-gear-fill me-1"></i>Configurações</div>
             <div class="card-body">
                 <form method="POST">
                     <?= csrfField() ?>
                     <div class="mb-3">
-                        <label class="form-label fw-bold" style="font-size:.83rem;">Validade Padrão</label>
-                        <input type="text" name="carteira_validade" class="form-control form-control-sm"
-                               value="<?= e($globalVal) ?>" placeholder="Ex: 31/12/2025" maxlength="20">
-                        <div class="form-text" style="font-size:.72rem;">Usada quando o usuário não tem validade individual definida.</div>
+                        <label class="form-label fw-bold small" style="color:var(--primary);">Validade Padrão</label>
+                        <input type="date" name="carteira_validade" class="form-control form-control-sm"
+                               value="<?= e($globalValForInput) ?>">
+                        <div class="form-text">Usada quando o associado não tem validade individual definida.</div>
                     </div>
                     <div class="alert alert-info py-2 mb-3" style="font-size:.78rem;">
                         <i class="bi bi-info-circle me-1"></i>
                         Cores e outros ajustes visuais em
                         <a href="<?= BASE_URL ?>/admin/configuracoes.php#tabCarteira">Configurações → Carteira</a>.
                     </div>
-                    <button type="submit" class="btn w-100"
-                            style="background:var(--primary);color:#fff;font-weight:700;border-radius:8px;padding:9px;font-size:.88rem;border:none;">
+                    <button type="submit" class="btn btn-primary-custom w-100 fw-bold">
                         <i class="bi bi-check2 me-1"></i>Salvar
                     </button>
                 </form>
