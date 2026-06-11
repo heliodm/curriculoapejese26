@@ -330,6 +330,28 @@ function ensureUserTotpColumns(): void {
     }
 }
 
+// Auto-migrate: garante as regras de URL limpa no .htaccess de produção.
+// Necessário porque o updater preserva o .htaccess existente (lista de exclusão).
+function ensureHtaccessRules(): void {
+    $file    = SITE_ROOT . '/.htaccess';
+    $current = is_file($file) ? (string)@file_get_contents($file) : '';
+    if (strpos($current, 'curriculo.php?s=$1') !== false) return;
+
+    // ErrorDocument precisa do caminho relativo à raiz do domínio (suporta subdiretório)
+    $basePath = rtrim((string)parse_url(BASE_URL, PHP_URL_PATH), '/');
+
+    $block = "\n# --- URLs limpas de curriculo (gerado automaticamente) ---\n"
+           . "<IfModule mod_rewrite.c>\n"
+           . "    RewriteEngine On\n"
+           . "    RewriteCond %{REQUEST_FILENAME} !-f\n"
+           . "    RewriteCond %{REQUEST_FILENAME} !-d\n"
+           . "    RewriteRule ^([a-z0-9][a-z0-9\\-]+)$ curriculo.php?s=\$1 [QSA,L]\n"
+           . "</IfModule>\n"
+           . "ErrorDocument 404 {$basePath}/curriculo.php\n";
+
+    @file_put_contents($file, $current . $block, LOCK_EX);
+}
+
 function rateLimitCheck(string $action, int $maxAttempts = 5, int $windowSecs = 300): bool {
     $ip  = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     $key = $action . ':' . $ip;

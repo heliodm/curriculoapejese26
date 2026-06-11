@@ -90,6 +90,7 @@ try { ensureLogTables();           } catch (\Exception $e) { /* DB not ready (e.
 try { ensureRateLimitTable();      } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
 try { ensureLogIpColumn();         } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
 try { ensureUserTotpColumns();     } catch (\Exception $e) { /* DB not ready (e.g. during install) */ }
+try { ensureHtaccessRules();       } catch (\Exception $e) { /* filesystem read-only */ }
 
 // Probabilistic cleanup (~1% of requests): expired tokens, old logs, stale rate-limit rows
 if (mt_rand(1, 100) === 1) {
