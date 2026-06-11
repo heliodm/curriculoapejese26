@@ -79,10 +79,10 @@ html, body { background: #f0f0f0; font-family: 'Times New Roman', Times, serif; 
 </head>
 <body>
 <div class="print-bar">
-    <button onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
+    <button id="btnPrint">🖨 Imprimir / Salvar PDF</button>
     <a href="<?= BASE_URL ?>/admin/declaracao.php">← Voltar</a>
     <span style="margin-left:8px;">
-        <select onchange="location.href='?adimplente='+this.value"
+        <select id="filtroAdimplente"
                 style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:4px 8px;border-radius:4px;font-size:.8rem;">
             <option value="todos"         <?= $filtroAdimplente==='todos'         ? 'selected':'' ?>>Todos</option>
             <option value="adimplentes"   <?= $filtroAdimplente==='adimplentes'   ? 'selected':'' ?>>Adimplentes</option>
@@ -127,5 +127,10 @@ html, body { background: #f0f0f0; font-family: 'Times New Roman', Times, serif; 
     </div>
 <?php endforeach; ?>
 </div>
+<script nonce="<?= CSP_NONCE ?>">
+document.getElementById('btnPrint').addEventListener('click', function () { window.print(); });
+var filtro = document.getElementById('filtroAdimplente');
+if (filtro) filtro.addEventListener('change', function () { location.href = '?adimplente=' + this.value; });
+</script>
 </body>
 </html>

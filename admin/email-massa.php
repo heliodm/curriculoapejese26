@@ -102,12 +102,13 @@ include __DIR__ . '/includes/header.php';
                 <?php endforeach; ?>
                 <?php endif; ?>
 
-                <form method="POST" data-no-unsaved>
+                <form method="POST" data-no-unsaved
+                      data-confirm="Confirma o envio do e-mail para os destinatários selecionados?">
                     <?= csrfField() ?>
 
                     <div class="mb-3">
                         <label class="form-label">Destinatários <span class="text-danger">*</span></label>
-                        <select name="destinatarios" class="form-select" id="destSelect" onchange="updateCount()">
+                        <select name="destinatarios" class="form-select" id="destSelect">
                             <option value="todos">Todos os associados ativos (<?= $counts['todos'] ?? 0 ?>)</option>
                             <option value="adimplentes">Somente adimplentes (<?= $counts['adimplentes'] ?? 0 ?>)</option>
                             <option value="inadimplentes">Somente inadimplentes (<?= $counts['inadimplentes'] ?? 0 ?>)</option>
@@ -134,8 +135,7 @@ include __DIR__ . '/includes/header.php';
 
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary-custom"
-                                <?= !$mailEnabled ? 'disabled' : '' ?>
-                                onclick="return confirm('Confirma o envio do e-mail para os destinatários selecionados?')">
+                                <?= !$mailEnabled ? 'disabled' : '' ?>>
                             <i class="bi bi-send me-1"></i>Enviar E-mail
                         </button>
                         <a href="<?= BASE_URL ?>/admin/index.php" class="btn btn-outline-secondary">Cancelar</a>
@@ -190,6 +190,7 @@ function updateCount() {
     var val = document.getElementById('destSelect').value;
     document.getElementById('destCount').textContent = counts[val] || 0;
 }
+document.getElementById('destSelect').addEventListener('change', updateCount);
 </script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

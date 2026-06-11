@@ -175,13 +175,13 @@ $socialNetworks = [
 
     <!-- Action buttons -->
     <div class="resume-actions no-print mt-4">
-        <button class="btn-action btn-action-primary" onclick="showQRCode()">
+        <button class="btn-action btn-action-primary" id="btnQRCode">
             <i class="bi bi-qr-code"></i>QR Code
         </button>
-        <button class="btn-action btn-action-danger" onclick="window.print()">
+        <button class="btn-action btn-action-danger" id="btnPrint">
             <i class="bi bi-file-pdf"></i>Gerar PDF
         </button>
-        <button class="btn-action btn-action-ghost" onclick="copyLink()" id="copyLinkBtn">
+        <button class="btn-action btn-action-ghost" id="copyLinkBtn">
             <i class="bi bi-link-45deg"></i>Copiar Link
         </button>
         <a href="<?= BASE_URL ?>/index.php" class="btn-action btn-action-ghost">
@@ -264,12 +264,15 @@ if ($r['category_id']):
 </div>
 
 <script nonce="<?= CSP_NONCE ?>">
-function showQRCode() {
+document.getElementById('btnQRCode').addEventListener('click', function () {
     new bootstrap.Modal(document.getElementById('qrModal')).show();
-}
-function copyLink() {
-    var url = '<?= addslashes($curriculoUrl) ?>';
-    var btn = document.getElementById('copyLinkBtn');
+});
+document.getElementById('btnPrint').addEventListener('click', function () {
+    window.print();
+});
+document.getElementById('copyLinkBtn').addEventListener('click', function () {
+    var url = <?= json_encode($curriculoUrl) ?>;
+    var btn = this;
     if (navigator.clipboard) {
         navigator.clipboard.writeText(url).then(function () {
             btn.innerHTML = '<i class="bi bi-check-lg"></i>Copiado!';
@@ -284,7 +287,7 @@ function copyLink() {
     } else {
         prompt('Copie o link:', url);
     }
-}
+});
 </script>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

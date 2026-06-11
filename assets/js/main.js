@@ -13,4 +13,9 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
         new bootstrap.Tooltip(el);
     });
+
+    // Hide broken images instead of showing a broken-icon (replaces inline onerror)
+    document.querySelectorAll('img[data-hide-on-error]').forEach(function (img) {
+        img.addEventListener('error', function () { this.style.display = 'none'; });
+    });
 });

@@ -73,7 +73,7 @@ body {
 <body>
 <div class="verify-card">
     <div class="verify-header">
-        <img src="<?= e($logoUrl) ?>" alt="<?= e($siteName) ?>" onerror="this.style.display='none'">
+        <img src="<?= e($logoUrl) ?>" alt="<?= e($siteName) ?>" id="verifyLogo">
         <h4>Verificação de Associado</h4>
     </div>
     <div class="gold-bar"></div>
@@ -160,5 +160,11 @@ body {
         <br><a href="<?= BASE_URL ?>/index.php">← Voltar ao site</a>
     </div>
 </div>
+<script nonce="<?= CSP_NONCE ?>">
+(function () {
+    var l = document.getElementById('verifyLogo');
+    if (l) l.addEventListener('error', function () { this.style.display = 'none'; });
+})();
+</script>
 </body>
 </html>

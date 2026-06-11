@@ -218,7 +218,7 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
                 <div class="field-input-group">
                     <input type="password" name="password" id="pw1" required minlength="8" autofocus placeholder="Mínimo 8 caracteres">
                     <i class="bi bi-lock field-icon"></i>
-                    <button type="button" class="toggle-pass" onclick="toggleP('pw1','ic1')" tabindex="-1">
+                    <button type="button" class="toggle-pass" data-toggle-field="pw1" data-toggle-icon="ic1" tabindex="-1">
                         <i class="bi bi-eye" id="ic1"></i>
                     </button>
                 </div>
@@ -228,7 +228,7 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
                 <div class="field-input-group">
                     <input type="password" name="password2" id="pw2" required minlength="8" placeholder="Repita a senha">
                     <i class="bi bi-lock-fill field-icon"></i>
-                    <button type="button" class="toggle-pass" onclick="toggleP('pw2','ic2')" tabindex="-1">
+                    <button type="button" class="toggle-pass" data-toggle-field="pw2" data-toggle-icon="ic2" tabindex="-1">
                         <i class="bi bi-eye" id="ic2"></i>
                     </button>
                 </div>
@@ -252,12 +252,14 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
 </div>
 
 <script nonce="<?= CSP_NONCE ?>">
-function toggleP(fId, iId) {
-    const f = document.getElementById(fId);
-    const i = document.getElementById(iId);
-    if (f.type === 'password') { f.type = 'text'; i.className = 'bi bi-eye-slash'; }
-    else { f.type = 'password'; i.className = 'bi bi-eye'; }
-}
+document.querySelectorAll('[data-toggle-field]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var f = document.getElementById(btn.getAttribute('data-toggle-field'));
+        var i = document.getElementById(btn.getAttribute('data-toggle-icon'));
+        if (f.type === 'password') { f.type = 'text'; i.className = 'bi bi-eye-slash'; }
+        else { f.type = 'password'; i.className = 'bi bi-eye'; }
+    });
+});
 document.querySelectorAll('.field-input-group input').forEach(function (inp) {
     inp.addEventListener('focus', function () { this.parentElement.querySelector('.field-icon').style.color = 'var(--primary)'; });
     inp.addEventListener('blur',  function () { this.parentElement.querySelector('.field-icon').style.color = ''; });

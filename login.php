@@ -385,7 +385,7 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
         <div class="left-ring"></div>
         <div class="left-content">
             <div class="left-logo-wrap">
-                <img src="<?= e($logoUrl) ?>" alt="<?= e($siteName) ?>" onerror="this.parentElement.innerHTML='<i class=\'bi bi-shield-check\' style=\'font-size:2.5rem;color:#fff;\'></i>'">
+                <img src="<?= e($logoUrl) ?>" alt="<?= e($siteName) ?>" id="loginLogo">
             </div>
             <h1 class="left-title"><?= e($siteName) ?></h1>
             <p class="left-subtitle"><?= e($siteDesc) ?></p>
@@ -436,7 +436,7 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
                                required autocomplete="current-password"
                                placeholder="••••••••">
                         <i class="bi bi-lock field-icon"></i>
-                        <button type="button" class="toggle-pass" onclick="togglePass()" tabindex="-1" aria-label="Mostrar senha">
+                        <button type="button" class="toggle-pass" id="togglePassBtn" tabindex="-1" aria-label="Mostrar senha">
                             <i class="bi bi-eye" id="passIcon"></i>
                         </button>
                     </div>
@@ -468,12 +468,20 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script nonce="<?= CSP_NONCE ?>">
-function togglePass() {
+document.getElementById('togglePassBtn').addEventListener('click', function () {
     const f = document.getElementById('passwordField');
     const i = document.getElementById('passIcon');
     if (f.type === 'password') { f.type = 'text';     i.className = 'bi bi-eye-slash'; }
     else                       { f.type = 'password'; i.className = 'bi bi-eye'; }
-}
+});
+
+// Logo fallback: swap to an icon if the image fails to load
+(function () {
+    var logo = document.getElementById('loginLogo');
+    if (logo) logo.addEventListener('error', function () {
+        this.parentElement.innerHTML = '<i class="bi bi-shield-check" style="font-size:2.5rem;color:#fff;"></i>';
+    });
+})();
 
 // Focus colour on icon
 document.querySelectorAll('.field-input-group input').forEach(function (inp) {

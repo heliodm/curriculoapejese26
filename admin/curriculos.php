@@ -225,8 +225,7 @@ if (in_array($acao, ['novo', 'editar'])) {
                                 </label>
                             </div>
                             <?php else: ?>
-                            <div class="photo-placeholder" id="photoPlaceholder"
-                                 onclick="document.getElementById('photoInput').click()">
+                            <div class="photo-placeholder" id="photoPlaceholder" data-trigger="photoInput">
                                 <i class="bi bi-person-bounding-box"></i>
                                 <span>Clique para selecionar</span>
                             </div>
@@ -234,8 +233,7 @@ if (in_array($acao, ['novo', 'editar'])) {
                             <?php endif; ?>
                         </div>
                         <input type="file" name="photo" id="photoInput" accept="image/*" class="d-none">
-                        <button type="button" class="btn btn-sm btn-outline-primary mt-2"
-                                onclick="document.getElementById('photoInput').click()">
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-trigger="photoInput">
                             <i class="bi bi-upload me-1"></i><?= ($editing && $editing['photo']) ? 'Trocar' : 'Enviar' ?> Foto
                         </button>
                         <div class="small text-muted mt-1">JPG, PNG, WEBP — máx 5 MB</div>
@@ -413,8 +411,7 @@ if (in_array($acao, ['novo', 'editar'])) {
                        class="btn btn-outline-secondary">
                         <i class="bi bi-eye me-1"></i>Ver Currículo
                     </a>
-                    <button type="button" class="btn btn-outline-secondary" id="copyLinkFormBtn"
-                            onclick="copyResFormLink()">
+                    <button type="button" class="btn btn-outline-secondary" id="copyLinkFormBtn">
                         <i class="bi bi-link-45deg me-1"></i>Copiar Link
                     </button>
                     <?php endif; ?>
@@ -428,6 +425,14 @@ if (in_array($acao, ['novo', 'editar'])) {
     </div>
 
     <script nonce="<?= CSP_NONCE ?>">
+    // Buttons that open the hidden file input
+    document.querySelectorAll('[data-trigger]').forEach(function (el) {
+        el.addEventListener('click', function () {
+            var t = document.getElementById(el.getAttribute('data-trigger'));
+            if (t) t.click();
+        });
+    });
+
     // Foto preview
     document.getElementById('photoInput').addEventListener('change', function () {
         const file = this.files[0];
@@ -443,19 +448,22 @@ if (in_array($acao, ['novo', 'editar'])) {
         reader.readAsDataURL(file);
     });
 
-    // Copy link
-    function copyResFormLink() {
-        <?php if ($editing): ?>
-        var url = '<?= addslashes(BASE_URL . '/curriculo.php?s=' . urlencode($editing['slug'])) ?>';
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(url).then(function () {
-                var btn = document.getElementById('copyLinkFormBtn');
-                btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Copiado!';
-                setTimeout(function () { btn.innerHTML = '<i class="bi bi-link-45deg me-1"></i>Copiar Link'; }, 2000);
-            });
-        } else { prompt('Copie o link:', url); }
-        <?php endif; ?>
-    }
+    // Copy link (form editor)
+    <?php if ($editing): ?>
+    (function () {
+        var btn = document.getElementById('copyLinkFormBtn');
+        if (!btn) return;
+        var url = <?= json_encode(BASE_URL . '/curriculo.php?s=' . urlencode($editing['slug'])) ?>;
+        btn.addEventListener('click', function () {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(function () {
+                    btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Copiado!';
+                    setTimeout(function () { btn.innerHTML = '<i class="bi bi-link-45deg me-1"></i>Copiar Link'; }, 2000);
+                });
+            } else { prompt('Copie o link:', url); }
+        });
+    })();
+    <?php endif; ?>
 
     // Consent toggle
     document.getElementById('consentCheck').addEventListener('change', function () {
@@ -611,8 +619,7 @@ include __DIR__ . '/includes/header.php';
                                 <i class="bi bi-eye"></i>
                             </a>
                             <button type="button" class="btn btn-xs btn-outline-secondary me-1"
-                                    title="Copiar link"
-                                    onclick="copyResLink('<?= addslashes(BASE_URL . '/curriculo.php?s=' . urlencode($r['slug'])) ?>', this)">
+                                    title="Copiar link" data-copy-link="<?= e(BASE_URL . '/curriculo.php?s=' . urlencode($r['slug'])) ?>">
                                 <i class="bi bi-link-45deg"></i>
                             </button>
                             <a href="?acao=editar&id=<?= $r['id'] ?>"
@@ -620,7 +627,7 @@ include __DIR__ . '/includes/header.php';
                                 <i class="bi bi-pencil"></i>
                             </a>
                             <form method="POST" class="d-inline" data-no-unsaved
-                                  onsubmit="return confirm('Excluir currículo de <?= e(addslashes($r['name'])) ?>?')">
+                                  data-confirm="Excluir currículo de <?= e($r['name']) ?>?">
                                 <?= csrfField() ?>
                                 <input type="hidden" name="acao" value="excluir">
                                 <input type="hidden" name="id" value="<?= $r['id'] ?>">
@@ -654,17 +661,20 @@ include __DIR__ . '/includes/header.php';
 </div>
 
 <script nonce="<?= CSP_NONCE ?>">
-function copyResLink(url, btn) {
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(url).then(function () {
-            var orig = btn.innerHTML;
-            btn.innerHTML = '<i class="bi bi-check-lg"></i>';
-            setTimeout(function () { btn.innerHTML = orig; }, 1800);
-        });
-    } else {
-        prompt('Copie o link:', url);
-    }
-}
+document.querySelectorAll('[data-copy-link]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var url = btn.getAttribute('data-copy-link');
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(function () {
+                var orig = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-check-lg"></i>';
+                setTimeout(function () { btn.innerHTML = orig; }, 1800);
+            });
+        } else {
+            prompt('Copie o link:', url);
+        }
+    });
+});
 
 document.addEventListener('DOMContentLoaded', function () {
     makeTableSortable('resumesTable');

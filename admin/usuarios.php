@@ -303,7 +303,8 @@ include __DIR__ . '/includes/header.php';
                                 <input type="password" name="password" class="form-control" id="pwdField"
                                        placeholder="<?= $editing ? 'Deixe em branco para manter' : '' ?>"
                                        <?= $editing ? '' : 'required' ?> minlength="8">
-                                <button type="button" class="btn btn-outline-secondary" onclick="toggleField('pwdField','pwdIcon')">
+                                <button type="button" class="btn btn-outline-secondary"
+                                        data-toggle-field="pwdField" data-toggle-icon="pwdIcon">
                                     <i class="bi bi-eye" id="pwdIcon"></i>
                                 </button>
                             </div>
@@ -473,7 +474,7 @@ include __DIR__ . '/includes/header.php';
                                 <i class="bi bi-pencil"></i>
                             </a>
                             <form method="POST" class="d-inline" data-no-unsaved
-                                  onsubmit="return confirm('Redefinir senha de <?= e(addslashes($u['full_name'])) ?>?')">
+                                  data-confirm="Redefinir senha de <?= e($u['full_name']) ?>?">
                                 <?= csrfField() ?>
                                 <input type="hidden" name="acao" value="reset_senha">
                                 <input type="hidden" name="id" value="<?= $u['id'] ?>">
@@ -483,7 +484,7 @@ include __DIR__ . '/includes/header.php';
                             </form>
                             <?php if ($u['id'] !== (int)$_SESSION['user_id']): ?>
                             <form method="POST" class="d-inline" data-no-unsaved
-                                  onsubmit="return confirm('Excluir usuário <?= e(addslashes($u['full_name'])) ?>?')">
+                                  data-confirm="Excluir usuário <?= e($u['full_name']) ?>?">
                                 <?= csrfField() ?>
                                 <input type="hidden" name="acao" value="excluir">
                                 <input type="hidden" name="id" value="<?= $u['id'] ?>">

@@ -426,6 +426,16 @@ button.sidebar-link {
 }
 .btn-link-footer:hover { text-decoration: underline; }
 
+/* ===== Profile shortcuts (admin/perfil.php) ===== */
+.profile-shortcut {
+    transition: background .15s, border-color .15s;
+    border: 1px solid transparent;
+}
+.profile-shortcut:hover {
+    background: #f0f4fb;
+    border-color: #d0d8ee;
+}
+
 /* ===== Declaration preview (admin/declaracao.php) ===== */
 .decl-preview {
     background: #f9f9f9;

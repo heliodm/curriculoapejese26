@@ -51,13 +51,6 @@ if ($filAcao !== '') {
 }
 $whereClause = implode(' AND ', $where);
 
-$total = (int)db()->prepare(
-    "SELECT COUNT(*) FROM user_logs l LEFT JOIN users u ON u.id = l.user_id WHERE {$whereClause}"
-)->execute($params) ? (int)db()->prepare(
-    "SELECT COUNT(*) FROM user_logs l LEFT JOIN users u ON u.id = l.user_id WHERE {$whereClause}"
-)->execute($params) : 0;
-
-// Re-query with proper params for count
 $countStmt = db()->prepare(
     "SELECT COUNT(*) FROM user_logs l LEFT JOIN users u ON u.id = l.user_id WHERE {$whereClause}"
 );

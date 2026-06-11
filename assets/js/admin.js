@@ -33,6 +33,27 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
         new bootstrap.Tooltip(el);
     });
+
+    // Confirm-on-submit (CSP-safe replacement for inline onsubmit="return confirm()")
+    document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            if (!window.confirm(form.getAttribute('data-confirm'))) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    // Password visibility toggles (CSP-safe replacement for inline onclick)
+    document.querySelectorAll('[data-toggle-field]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            toggleField(btn.getAttribute('data-toggle-field'), btn.getAttribute('data-toggle-icon'));
+        });
+    });
+
+    // Hide broken images instead of showing a broken-icon (replaces inline onerror)
+    document.querySelectorAll('img[data-hide-on-error]').forEach(function (img) {
+        img.addEventListener('error', function () { this.style.display = 'none'; });
+    });
 });
 
 function toggleField(fieldId, iconId) {

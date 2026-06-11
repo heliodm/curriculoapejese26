@@ -186,7 +186,8 @@ include __DIR__ . '/includes/header.php';
                             <div class="input-group">
                                 <input type="password" name="password" class="form-control" id="pw1"
                                        minlength="8" placeholder="Deixe em branco para manter">
-                                <button type="button" class="btn btn-outline-secondary" onclick="toggleF('pw1','ic1')">
+                                <button type="button" class="btn btn-outline-secondary"
+                                        data-toggle-field="pw1" data-toggle-icon="ic1">
                                     <i class="bi bi-eye" id="ic1"></i>
                                 </button>
                             </div>
@@ -196,7 +197,8 @@ include __DIR__ . '/includes/header.php';
                             <div class="input-group">
                                 <input type="password" name="password2" class="form-control" id="pw2"
                                        minlength="8" placeholder="Repita a nova senha">
-                                <button type="button" class="btn btn-outline-secondary" onclick="toggleF('pw2','ic2')">
+                                <button type="button" class="btn btn-outline-secondary"
+                                        data-toggle-field="pw2" data-toggle-icon="ic2">
                                     <i class="bi bi-eye" id="ic2"></i>
                                 </button>
                             </div>
@@ -257,10 +259,7 @@ include __DIR__ . '/includes/header.php';
                 ];
                 ?>
                 <?php foreach ($links as [$href, $icon, $title, $sub]): ?>
-                <a href="<?= $href ?>" class="d-flex align-items-center gap-3 p-2 rounded text-decoration-none text-dark mb-1"
-                   style="transition:.15s;border:1px solid transparent;"
-                   onmouseover="this.style.background='#f0f4fb';this.style.borderColor='#d0d8ee';"
-                   onmouseout="this.style.background='';this.style.borderColor='transparent';">
+                <a href="<?= $href ?>" class="profile-shortcut d-flex align-items-center gap-3 p-2 rounded text-decoration-none text-dark mb-1">
                     <i class="bi <?= $icon ?>" style="font-size:1.3rem;color:var(--primary);"></i>
                     <div>
                         <div class="fw-semibold" style="font-size:.9rem;"><?= $title ?></div>
@@ -293,11 +292,10 @@ include __DIR__ . '/includes/header.php';
             <div class="card-body" style="font-size:.88rem;">
                 <?php if ($totpEnabled): ?>
                 <p class="mb-3 text-muted">A autenticação em duas etapas está <strong class="text-success">ativada</strong>. Você precisará do código do aplicativo autenticador a cada login.</p>
-                <form method="POST">
+                <form method="POST" data-confirm="Desativar 2FA reduz a segurança da conta. Confirma?">
                     <?= csrfField() ?>
                     <input type="hidden" name="totp_action" value="disable">
-                    <button type="submit" class="btn btn-sm btn-outline-danger"
-                            onclick="return confirm('Desativar 2FA reduz a segurança da conta. Confirma?')">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
                         <i class="bi bi-shield-x me-1"></i>Desativar 2FA
                     </button>
                 </form>
@@ -342,13 +340,6 @@ include __DIR__ . '/includes/header.php';
 </div>
 
 <script nonce="<?= CSP_NONCE ?>">
-function toggleF(fId, iId) {
-    const f = document.getElementById(fId);
-    const i = document.getElementById(iId);
-    if (f.type === 'password') { f.type = 'text'; i.className = 'bi bi-eye-slash'; }
-    else { f.type = 'password'; i.className = 'bi bi-eye'; }
-}
-
 // Inline QR code via canvas (no external server)
 (function () {
     var el = document.getElementById('totp-qr');

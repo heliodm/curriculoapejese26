@@ -66,7 +66,7 @@ $__nonce = CSP_NONCE;
 header(
     "Content-Security-Policy: "
     . "default-src 'self'; "
-    . "script-src 'nonce-{$__nonce}' https://cdn.jsdelivr.net; "
+    . "script-src 'self' 'nonce-{$__nonce}' https://cdn.jsdelivr.net; "
     . "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
     . "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
     . "img-src 'self' data: https://api.qrserver.com; "

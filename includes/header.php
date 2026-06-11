@@ -33,7 +33,7 @@ $menuItems = getMenuItems();
     <nav class="navbar navbar-expand-lg">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-2" href="<?= BASE_URL ?>/index.php">
-                <img src="<?= e($logoUrl) ?>" alt="<?= e($siteName) ?>" class="header-logo" onerror="this.style.display='none'">
+                <img src="<?= e($logoUrl) ?>" alt="<?= e($siteName) ?>" class="header-logo" data-hide-on-error>
                 <span class="brand-name"><?= e($siteName) ?></span>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"

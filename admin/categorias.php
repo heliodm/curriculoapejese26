@@ -3,12 +3,12 @@ require_once dirname(__DIR__) . '/config/config.php';
 require_once __DIR__ . '/includes/auth_check.php';
 requireAdmin();
 
-$acao = sanitize($_GET['acao'] ?? 'listar');
-$id   = (int)($_GET['id'] ?? 0);
+$acao = sanitize($_GET['acao'] ?? ($_POST['acao'] ?? 'listar'));
+$id   = (int)($_GET['id'] ?? ($_POST['id'] ?? 0));
 
-// DELETE
-if ($acao === 'excluir' && $id > 0) {
-    if (!verifyCsrf($_GET['csrf'] ?? '')) { flash('danger', 'Token inválido.'); }
+// DELETE — POST only (state-changing actions must not be triggerable via GET)
+if ($acao === 'excluir' && $id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!verifyCsrf($_POST['csrf_token'] ?? '')) { flash('danger', 'Token inválido.'); }
     else {
         $stmt2 = db()->prepare("SELECT COUNT(*) FROM resumes WHERE category_id = ?");
         $stmt2->execute([$id]);
@@ -23,9 +23,9 @@ if ($acao === 'excluir' && $id > 0) {
     redirect(BASE_URL . '/admin/categorias.php');
 }
 
-// TOGGLE ACTIVE
-if ($acao === 'toggle' && $id > 0) {
-    if (verifyCsrf($_GET['csrf'] ?? '')) {
+// TOGGLE ACTIVE — POST only
+if ($acao === 'toggle' && $id > 0 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (verifyCsrf($_POST['csrf_token'] ?? '')) {
         db()->prepare("UPDATE categories SET active = NOT active WHERE id = ?")->execute([$id]);
         flash('success', 'Status atualizado.');
     }
@@ -157,22 +157,30 @@ include __DIR__ . '/includes/header.php';
                         <td><span class="badge bg-primary-soft"><?= $cat['total_resumes'] ?></span></td>
                         <td><?= $cat['order_num'] ?></td>
                         <td>
-                            <a href="?acao=toggle&id=<?= $cat['id'] ?>&csrf=<?= urlencode(csrfToken()) ?>"
-                               class="badge <?= $cat['active'] ? 'bg-success' : 'bg-secondary' ?> text-decoration-none">
-                                <?= $cat['active'] ? 'Ativa' : 'Inativa' ?>
-                            </a>
+                            <form method="POST" class="d-inline" data-no-unsaved>
+                                <?= csrfField() ?>
+                                <input type="hidden" name="acao" value="toggle">
+                                <input type="hidden" name="id" value="<?= $cat['id'] ?>">
+                                <button type="submit"
+                                        class="badge border-0 badge-btn <?= $cat['active'] ? 'bg-success' : 'bg-secondary' ?>">
+                                    <?= $cat['active'] ? 'Ativa' : 'Inativa' ?>
+                                </button>
+                            </form>
                         </td>
-                        <td>
+                        <td class="text-nowrap">
                             <a href="?acao=editar&id=<?= $cat['id'] ?>" class="btn btn-xs btn-outline-primary me-1" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </a>
                             <?php if ($cat['total_resumes'] == 0): ?>
-                            <a href="?acao=excluir&id=<?= $cat['id'] ?>&csrf=<?= urlencode(csrfToken()) ?>"
-                               class="btn btn-xs btn-outline-danger"
-                               onclick="return confirm('Excluir categoria <?= e(addslashes($cat['name'])) ?>?')"
-                               title="Excluir">
-                                <i class="bi bi-trash"></i>
-                            </a>
+                            <form method="POST" class="d-inline" data-no-unsaved
+                                  data-confirm="Excluir categoria <?= e($cat['name']) ?>?">
+                                <?= csrfField() ?>
+                                <input type="hidden" name="acao" value="excluir">
+                                <input type="hidden" name="id" value="<?= $cat['id'] ?>">
+                                <button type="submit" class="btn btn-xs btn-outline-danger" title="Excluir">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
                             <?php endif; ?>
                         </td>
                     </tr>

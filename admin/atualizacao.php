@@ -43,8 +43,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $branch = preg_replace('/[^a-zA-Z0-9\/_\-\.]/', '', trim($_POST['branch'] ?? ''));
         $repo   = sanitize($_POST['github_repo'] ?? '');
 
-        saveSetting('github_repo',    $repo);
-        saveSetting('github_token',   $token);
+        saveSetting('github_repo', $repo);
+        // Never overwrite the stored token with an empty field. A blank field
+        // means "keep current"; tick the clear checkbox to actually remove it.
+        if (!empty($_POST['github_token_clear'])) {
+            saveSetting('github_token', '');
+        } elseif ($token !== '') {
+            saveSetting('github_token', $token);
+        }
         if ($branch) {
             saveSetting('github_branch', $branch);
             $v = upd_readVersion();
@@ -67,6 +73,7 @@ $canWrite    = upd_canWrite();
 $canUpdate   = $canDownload && $canExtract && $canWrite;
 
 $token      = getSetting('github_token', '');
+$hasToken   = $token !== '';
 $repo       = getSetting('github_repo', '');
 $webhookUrl = BASE_URL . '/webhook.php';
 
@@ -166,7 +173,7 @@ include __DIR__ . '/includes/header.php';
                             <?php endif; ?>
                         </div>
                         <?php if ($canUpdate): ?>
-                        <form method="POST" onsubmit="return confirmarUpdate(this);">
+                        <form method="POST" id="form-atualizar">
                             <?= csrfField() ?>
                             <input type="hidden" name="acao" value="atualizar">
                             <button type="submit" id="btn-atualizar"
@@ -230,7 +237,7 @@ include __DIR__ . '/includes/header.php';
                 <div class="input-group mb-3">
                     <input type="text" class="form-control form-control-sm font-monospace" id="webhookUrl"
                            value="<?= e($webhookUrl) ?>" readonly>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="copyWebhook()" title="Copiar">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCopyWebhook" title="Copiar">
                         <i class="bi bi-clipboard" id="copyIcon"></i>
                     </button>
                 </div>
@@ -335,16 +342,24 @@ include __DIR__ . '/includes/header.php';
                         <label class="form-label" style="font-size:.83rem;font-weight:700;color:var(--primary);">
                             GitHub Token
                             <span style="font-weight:400;color:#999;font-size:.75rem;">(repos privados)</span>
+                            <?php if ($hasToken): ?>
+                            <span class="badge bg-success ms-1" style="font-size:.62rem;">CONFIGURADO</span>
+                            <?php endif; ?>
                         </label>
-                        <div class="input-group input-group-sm">
-                            <input type="password" class="form-control" name="github_token" id="inp-token"
-                                   value="<?= e($token) ?>" placeholder="ghp_xxxxxxxxxxxx" maxlength="100">
-                            <button type="button" class="btn btn-outline-secondary" onclick="toggleToken()" title="Mostrar/ocultar">
-                                <i class="bi bi-eye" id="ico-token"></i>
-                            </button>
+                        <input type="password" class="form-control form-control-sm" name="github_token" id="inp-token"
+                               value="" autocomplete="new-password"
+                               placeholder="<?= $hasToken ? '•••••••• (deixe em branco para manter)' : 'ghp_xxxxxxxxxxxx' ?>"
+                               maxlength="100">
+                        <?php if ($hasToken): ?>
+                        <div class="form-check mt-1">
+                            <input type="checkbox" class="form-check-input" name="github_token_clear" value="1" id="chkTokenClear">
+                            <label class="form-check-label text-danger small" for="chkTokenClear">
+                                <i class="bi bi-trash3 me-1"></i>Remover token salvo
+                            </label>
                         </div>
+                        <?php endif; ?>
                         <div class="form-text" style="font-size:.73rem;">
-                            Necessário para repos privados.
+                            Necessário para repos privados. Por segurança, o token nunca é exibido.
                             <a href="https://github.com/settings/tokens/new?scopes=repo&description=SistemaCurriculos" target="_blank" rel="noopener" style="color:var(--primary);">Gerar token →</a>
                         </div>
                     </div>
@@ -361,32 +376,38 @@ include __DIR__ . '/includes/header.php';
 </div>
 
 <script nonce="<?= CSP_NONCE ?>">
-function confirmarUpdate(form) {
-    if (!confirm('Confirmar atualização do sistema?\n\nOs arquivos de configuração e uploads serão preservados.\nOs arquivos de código serão substituídos pela versão mais recente do GitHub.')) {
-        return false;
-    }
-    const btn = document.getElementById('btn-atualizar');
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Baixando e instalando…';
-    }
-    return true;
+var formUpd = document.getElementById('form-atualizar');
+if (formUpd) {
+    formUpd.addEventListener('submit', function (e) {
+        if (!confirm('Confirmar atualização do sistema?\n\nOs arquivos de configuração e uploads serão preservados.\nOs arquivos de código serão substituídos pela versão mais recente do GitHub.')) {
+            e.preventDefault();
+            return;
+        }
+        var btn = document.getElementById('btn-atualizar');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Baixando e instalando…';
+        }
+    });
 }
 
-function toggleToken() {
-    const inp = document.getElementById('inp-token');
-    const ico = document.getElementById('ico-token');
-    if (inp.type === 'password') { inp.type = 'text';     ico.className = 'bi bi-eye-slash'; }
-    else                         { inp.type = 'password'; ico.className = 'bi bi-eye'; }
-}
-
-function copyWebhook() {
-    const el = document.getElementById('webhookUrl');
-    el.select();
-    document.execCommand('copy');
-    const icon = document.getElementById('copyIcon');
-    icon.className = 'bi bi-clipboard-check text-success';
-    setTimeout(() => { icon.className = 'bi bi-clipboard'; }, 2000);
+var btnCopyWebhook = document.getElementById('btnCopyWebhook');
+if (btnCopyWebhook) {
+    btnCopyWebhook.addEventListener('click', function () {
+        var el = document.getElementById('webhookUrl');
+        var icon = document.getElementById('copyIcon');
+        var done = function () {
+            icon.className = 'bi bi-clipboard-check text-success';
+            setTimeout(function () { icon.className = 'bi bi-clipboard'; }, 2000);
+        };
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(el.value).then(done);
+        } else {
+            el.select();
+            document.execCommand('copy');
+            done();
+        }
+    });
 }
 </script>
 

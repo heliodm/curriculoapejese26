@@ -25,7 +25,7 @@ $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-de
             <i class="bi bi-list fs-4"></i>
         </button>
         <a class="navbar-brand d-flex align-items-center gap-2" href="<?= BASE_URL ?>/admin/index.php">
-            <img src="<?= e($logoUrl) ?>" alt="" class="admin-logo" onerror="this.style.display='none'">
+            <img src="<?= e($logoUrl) ?>" alt="" class="admin-logo" data-hide-on-error>
             <span><?= e($siteName) ?></span>
         </a>
         <div class="ms-auto d-flex align-items-center gap-2">

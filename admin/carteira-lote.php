@@ -102,10 +102,10 @@ html, body { background: #e8e8e8; font-family: Arial, Helvetica, sans-serif; fon
 </head>
 <body>
 <div class="print-bar">
-    <button onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
+    <button id="btnPrint">🖨 Imprimir / Salvar PDF</button>
     <a href="<?= BASE_URL ?>/admin/carteira.php">← Voltar</a>
     <span style="margin-left:8px;">
-        <select onchange="location.href='?adimplente='+this.value"
+        <select id="filtroAdimplente"
                 style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);padding:4px 8px;border-radius:4px;font-size:.8rem;">
             <option value="todos"         <?= $filtroAdimplente==='todos'         ? 'selected':'' ?>>Todos</option>
             <option value="adimplentes"   <?= $filtroAdimplente==='adimplentes'   ? 'selected':'' ?>>Adimplentes</option>
@@ -132,7 +132,7 @@ foreach ($chunks as $chunk):
 ?>
     <div class="card-outer">
         <div class="card-header-bar">
-            <img src="<?= e($logoUrl) ?>" alt="" onerror="this.style.display='none'">
+            <img src="<?= e($logoUrl) ?>" alt="" class="lote-logo">
             <div class="card-header-text">
                 <h1>APEJESE</h1>
                 <p>Carteira de Associado</p>
@@ -145,7 +145,7 @@ foreach ($chunks as $chunk):
                     <?php if ($photoUrl): ?>
                     <img src="<?= e($photoUrl) ?>" alt="">
                     <?php else: ?>
-                    <span class="np">👤</span>
+                    <svg class="np" viewBox="0 0 24 24" fill="#b0bcd4" width="18" height="18" aria-hidden="true"><path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2c-3.33 0-10 1.67-10 5v2h20v-2c0-3.33-6.67-5-10-5z"/></svg>
                     <?php endif; ?>
                 </div>
                 <div style="flex:1;min-width:0;">
@@ -197,5 +197,13 @@ foreach ($chunks as $chunk):
 </div>
 <?php endforeach; ?>
 </div>
+<script nonce="<?= CSP_NONCE ?>">
+document.getElementById('btnPrint').addEventListener('click', function () { window.print(); });
+var filtro = document.getElementById('filtroAdimplente');
+if (filtro) filtro.addEventListener('change', function () { location.href = '?adimplente=' + this.value; });
+document.querySelectorAll('.lote-logo').forEach(function (img) {
+    img.addEventListener('error', function () { this.style.display = 'none'; });
+});
+</script>
 </body>
 </html>
