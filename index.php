@@ -172,7 +172,7 @@ $pageTitle = getSetting('site_name', APP_NAME) . ' — Encontre Profissionais';
         <div class="row g-3 g-md-4">
             <?php foreach ($resumes as $r): ?>
             <div class="col-6 col-md-4 col-lg-3">
-                <a href="<?= BASE_URL ?>/curriculo.php?s=<?= urlencode($r['slug']) ?>" class="resume-card">
+                <a href="<?= BASE_URL ?>/<?= e($r['slug']) ?>" class="resume-card">
                     <div class="resume-card-thumb">
                         <?php if ($r['photo']): ?>
                         <img src="<?= UPLOAD_URL . e($r['photo']) ?>" alt="<?= e($r['name']) ?>" loading="lazy">

@@ -4,6 +4,12 @@ require_once __DIR__ . '/config/config.php';
 $slug = sanitize($_GET['s'] ?? '');
 if (!$slug) redirect(BASE_URL . '/index.php');
 
+// 301: redirect old /curriculo.php?s=slug to clean /slug
+if (str_contains($_SERVER['REQUEST_URI'] ?? '', 'curriculo.php')) {
+    header('Location: ' . BASE_URL . '/' . $slug, true, 301);
+    exit;
+}
+
 $consentSQL = hasConsentColumn()    ? ' AND r.consent = 1' : '';
 $adimpSQL   = hasAdimplenteColumn() ? ' AND (u.adimplente = 1 OR r.user_id IS NULL)' : '';
 $stmt = db()->prepare("SELECT r.*, c.name AS category_name
@@ -21,7 +27,7 @@ if (!$r) {
 
 db()->prepare("UPDATE resumes SET views = views + 1 WHERE id = ?")->execute([$r['id']]);
 
-$curriculoUrl  = BASE_URL . '/curriculo.php?s=' . urlencode($r['slug']);
+$curriculoUrl  = BASE_URL . '/' . $r['slug'];
 $pageTitle     = $r['name'] . ' — ' . getSetting('site_name', APP_NAME);
 $ogType        = 'profile';
 $ogTitle       = $r['name'] . ($r['profession'] ? ' — ' . $r['profession'] : '');
@@ -213,7 +219,7 @@ if ($r['category_id']):
         <div class="row g-3">
             <?php foreach ($related as $rel): ?>
             <div class="col-md-4">
-                <a href="<?= BASE_URL ?>/curriculo.php?s=<?= urlencode($rel['slug']) ?>" class="related-card">
+                <a href="<?= BASE_URL ?>/<?= e($rel['slug']) ?>" class="related-card">
                     <?php if ($rel['photo']): ?>
                     <img src="<?= UPLOAD_URL . e($rel['photo']) ?>" alt="" class="related-card-avatar">
                     <?php else: ?>

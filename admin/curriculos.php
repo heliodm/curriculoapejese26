@@ -407,7 +407,7 @@ if (in_array($acao, ['novo', 'editar'])) {
                         <i class="bi bi-check-lg me-1"></i><?= $editing ? 'Salvar Alterações' : 'Criar Currículo' ?>
                     </button>
                     <?php if ($editing): ?>
-                    <a href="<?= BASE_URL ?>/curriculo.php?s=<?= e($editing['slug']) ?>" target="_blank"
+                    <a href="<?= BASE_URL ?>/<?= e($editing['slug']) ?>" target="_blank"
                        class="btn btn-outline-secondary">
                         <i class="bi bi-eye me-1"></i>Ver Currículo
                     </a>
@@ -453,7 +453,7 @@ if (in_array($acao, ['novo', 'editar'])) {
     (function () {
         var btn = document.getElementById('copyLinkFormBtn');
         if (!btn) return;
-        var url = <?= json_encode(BASE_URL . '/curriculo.php?s=' . urlencode($editing['slug'])) ?>;
+        var url = <?= json_encode(BASE_URL . '/' . $editing['slug']) ?>;
         btn.addEventListener('click', function () {
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(url).then(function () {
@@ -614,12 +614,12 @@ include __DIR__ . '/includes/header.php';
                             </form>
                         </td>
                         <td class="text-nowrap">
-                            <a href="<?= BASE_URL ?>/curriculo.php?s=<?= e($r['slug']) ?>" target="_blank"
+                            <a href="<?= BASE_URL ?>/<?= e($r['slug']) ?>" target="_blank"
                                class="btn btn-xs btn-outline-secondary me-1" title="Ver">
                                 <i class="bi bi-eye"></i>
                             </a>
                             <button type="button" class="btn btn-xs btn-outline-secondary me-1"
-                                    title="Copiar link" data-copy-link="<?= e(BASE_URL . '/curriculo.php?s=' . urlencode($r['slug'])) ?>">
+                                    title="Copiar link" data-copy-link="<?= e(BASE_URL . '/' . $r['slug']) ?>">
                                 <i class="bi bi-link-45deg"></i>
                             </button>
                             <a href="?acao=editar&id=<?= $r['id'] ?>"

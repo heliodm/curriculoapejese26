@@ -204,7 +204,7 @@ $recentUsers = db()->query(
                                     <?= !empty($r['updated_at']) ? date('d/m/Y', strtotime($r['updated_at'])) : '—' ?>
                                 </td>
                                 <td>
-                                    <a href="<?= BASE_URL ?>/curriculo.php?s=<?= e($r['slug']) ?>" target="_blank"
+                                    <a href="<?= BASE_URL ?>/<?= e($r['slug']) ?>" target="_blank"
                                        class="btn btn-xs btn-outline-secondary me-1" title="Ver público"><i class="bi bi-eye"></i></a>
                                     <a href="<?= BASE_URL ?>/admin/curriculos.php?acao=editar&id=<?= $r['id'] ?>"
                                        class="btn btn-xs btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
@@ -438,7 +438,7 @@ $recentResumes = db()->query(
                             <?= !empty($r['updated_at']) ? date('d/m/Y', strtotime($r['updated_at'])) : '—' ?>
                         </td>
                         <td>
-                            <a href="<?= BASE_URL ?>/curriculo.php?s=<?= e($r['slug']) ?>" target="_blank"
+                            <a href="<?= BASE_URL ?>/<?= e($r['slug']) ?>" target="_blank"
                                class="btn btn-xs btn-outline-secondary me-1"><i class="bi bi-eye"></i></a>
                             <a href="<?= BASE_URL ?>/admin/curriculos.php?acao=editar&id=<?= $r['id'] ?>"
                                class="btn btn-xs btn-outline-primary"><i class="bi bi-pencil"></i></a>
@@ -714,12 +714,12 @@ $completionPct   = (int)round($completionDone / $completionTotal * 100);
                 <i class="bi bi-pencil me-1"></i>Editar
             </a>
             <?php if ($isVisible): ?>
-            <a href="<?= BASE_URL ?>/curriculo.php?s=<?= e($myResume['slug']) ?>" target="_blank"
+            <a href="<?= BASE_URL ?>/<?= e($myResume['slug']) ?>" target="_blank"
                class="btn btn-outline-secondary btn-sm">
                 <i class="bi bi-eye me-1"></i>Ver Público
             </a>
             <?php else: ?>
-            <a href="<?= BASE_URL ?>/curriculo.php?s=<?= e($myResume['slug']) ?>" target="_blank"
+            <a href="<?= BASE_URL ?>/<?= e($myResume['slug']) ?>" target="_blank"
                class="btn btn-outline-secondary btn-sm" title="Visível apenas para você — não publicado">
                 <i class="bi bi-eye-slash me-1"></i>Visualizar (privado)
             </a>
