@@ -75,6 +75,7 @@ header(
 );
 
 require_once SITE_ROOT . '/config/database.php';
+require_once SITE_ROOT . '/includes/SmtpMailer.php';
 require_once SITE_ROOT . '/includes/functions.php';
 require_once SITE_ROOT . '/includes/totp.php';
 require_once SITE_ROOT . '/includes/updater.php';

@@ -387,14 +387,7 @@ function validateCpf(string $cpf): bool {
 }
 
 function sendMail(string $to, string $toName, string $subject, string $htmlBody): bool {
-    if (!getSetting('mail_enabled', '0')) return false;
-    $from     = getSetting('mail_from', '');
-    $fromName = getSetting('mail_from_name', 'APEJESE');
-    if (!$from || !filter_var($from, FILTER_VALIDATE_EMAIL)) return false;
-    $headers  = "From: =?UTF-8?B?" . base64_encode($fromName) . "?= <{$from}>\r\n"
-              . "MIME-Version: 1.0\r\n"
-              . "Content-Type: text/html; charset=UTF-8";
-    return @mail($to, "=?UTF-8?B?" . base64_encode($subject) . "?=", $htmlBody, $headers);
+    return sendMailWithAttachments($to, $toName, $subject, $htmlBody, []);
 }
 
 function sendMailWithAttachments(
@@ -407,38 +400,73 @@ function sendMailWithAttachments(
     if (!getSetting('mail_enabled', '0')) return false;
     $from     = getSetting('mail_from', '');
     $fromName = getSetting('mail_from_name', 'APEJESE');
+    $replyTo  = getSetting('mail_reply_to', '');
     if (!$from || !filter_var($from, FILTER_VALIDATE_EMAIL)) return false;
 
+    $smtpHost = getSetting('mail_smtp_host', '');
+    if ($smtpHost !== '') {
+        $mailer = new SmtpMailer(
+            $smtpHost,
+            (int) getSetting('mail_smtp_port', '587'),
+            getSetting('mail_smtp_encryption', 'tls'),
+            getSetting('mail_smtp_user', ''),
+            getSetting('mail_smtp_pass', '')
+        );
+        return $mailer->send($from, $fromName, $to, $toName, $subject, $htmlBody, $attachments, $replyTo);
+    }
+
+    // Fallback: PHP mail() with multipart/alternative for better deliverability
     $encSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
     $fromHeader = '=?UTF-8?B?' . base64_encode($fromName) . '?= <' . $from . '>';
 
+    $altBnd  = '----=_Alt_' . bin2hex(random_bytes(8));
+    $plain   = strip_tags(html_entity_decode(
+        preg_replace(['/<br\s*\/?>/i', '/<\/p>/i', '/<\/div>/i'], ["\n", "\n\n", "\n"], $htmlBody),
+        ENT_QUOTES | ENT_HTML5, 'UTF-8'
+    ));
+
     if (empty($attachments)) {
-        $headers = "From: {$fromHeader}\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8";
-        return @mail($to, $encSubject, $htmlBody, $headers);
+        $headers  = "From: {$fromHeader}\r\nMIME-Version: 1.0\r\n"
+                  . "Content-Type: multipart/alternative; boundary=\"{$altBnd}\"";
+        if ($replyTo && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
+            $headers .= "\r\nReply-To: {$replyTo}";
+        }
+        $body  = "--{$altBnd}\r\nContent-Type: text/plain; charset=UTF-8\r\n"
+               . "Content-Transfer-Encoding: base64\r\n\r\n"
+               . chunk_split(base64_encode($plain))
+               . "--{$altBnd}\r\nContent-Type: text/html; charset=UTF-8\r\n"
+               . "Content-Transfer-Encoding: base64\r\n\r\n"
+               . chunk_split(base64_encode($htmlBody))
+               . "--{$altBnd}--";
+        return @mail($to, $encSubject, $body, $headers);
     }
 
-    $boundary = '----=_Part_' . bin2hex(random_bytes(8));
-    $headers  = "From: {$fromHeader}\r\n"
-              . "MIME-Version: 1.0\r\n"
-              . "Content-Type: multipart/mixed; boundary=\"{$boundary}\"";
-
-    $body  = "--{$boundary}\r\n";
-    $body .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $body .= "Content-Transfer-Encoding: base64\r\n\r\n";
-    $body .= chunk_split(base64_encode($htmlBody)) . "\r\n";
-
+    $mixBnd  = '----=_Mix_' . bin2hex(random_bytes(8));
+    $headers = "From: {$fromHeader}\r\nMIME-Version: 1.0\r\n"
+             . "Content-Type: multipart/mixed; boundary=\"{$mixBnd}\"";
+    if ($replyTo && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
+        $headers .= "\r\nReply-To: {$replyTo}";
+    }
+    $body  = "--{$mixBnd}\r\n"
+           . "Content-Type: multipart/alternative; boundary=\"{$altBnd}\"\r\n\r\n"
+           . "--{$altBnd}\r\nContent-Type: text/plain; charset=UTF-8\r\n"
+           . "Content-Transfer-Encoding: base64\r\n\r\n"
+           . chunk_split(base64_encode($plain))
+           . "--{$altBnd}\r\nContent-Type: text/html; charset=UTF-8\r\n"
+           . "Content-Transfer-Encoding: base64\r\n\r\n"
+           . chunk_split(base64_encode($htmlBody))
+           . "--{$altBnd}--\r\n";
     foreach ($attachments as $att) {
         if (empty($att['data']) || empty($att['name'])) continue;
         $safeName = preg_replace('/[^\w.\-]/', '_', $att['name']);
         $mimeType = $att['type'] ?? 'application/octet-stream';
-        $body .= "--{$boundary}\r\n";
-        $body .= "Content-Type: {$mimeType}; name=\"{$safeName}\"\r\n";
-        $body .= "Content-Transfer-Encoding: base64\r\n";
-        $body .= "Content-Disposition: attachment; filename=\"{$safeName}\"\r\n\r\n";
-        $body .= chunk_split(base64_encode($att['data'])) . "\r\n";
+        $body    .= "--{$mixBnd}\r\n"
+                 . "Content-Type: {$mimeType}; name=\"{$safeName}\"\r\n"
+                 . "Content-Transfer-Encoding: base64\r\n"
+                 . "Content-Disposition: attachment; filename=\"{$safeName}\"\r\n\r\n"
+                 . chunk_split(base64_encode($att['data'])) . "\r\n";
     }
-
-    $body .= "--{$boundary}--";
+    $body .= "--{$mixBnd}--";
     return @mail($to, $encSubject, $body, $headers);
 }
 

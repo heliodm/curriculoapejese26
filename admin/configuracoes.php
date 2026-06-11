@@ -71,6 +71,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         saveSetting('mail_enabled',   isset($_POST['mail_enabled']) ? '1' : '0');
         saveSetting('mail_from',      filter_var($_POST['mail_from'] ?? '', FILTER_SANITIZE_EMAIL));
         saveSetting('mail_from_name', sanitize($_POST['mail_from_name'] ?? ''));
+        saveSetting('mail_reply_to',  filter_var($_POST['mail_reply_to'] ?? '', FILTER_SANITIZE_EMAIL));
+        saveSetting('mail_smtp_host', sanitize($_POST['mail_smtp_host'] ?? ''));
+        $smtpPort = (int)($_POST['mail_smtp_port'] ?? 587);
+        saveSetting('mail_smtp_port', (string)($smtpPort > 0 ? $smtpPort : 587));
+        $smtpEnc  = $_POST['mail_smtp_encryption'] ?? 'tls';
+        saveSetting('mail_smtp_encryption', in_array($smtpEnc, ['tls','ssl','none']) ? $smtpEnc : 'tls');
+        saveSetting('mail_smtp_user', sanitize($_POST['mail_smtp_user'] ?? ''));
+        if (!empty($_POST['mail_smtp_pass_clear'])) {
+            saveSetting('mail_smtp_pass', '');
+        } elseif (trim($_POST['mail_smtp_pass'] ?? '') !== '') {
+            saveSetting('mail_smtp_pass', trim($_POST['mail_smtp_pass']));
+        }
         flash('success', 'Configurações de e-mail salvas.');
     }
 
@@ -140,10 +152,17 @@ while (count($menuItems) < 3) $menuItems[] = ['label'=>'','url'=>'#','target'=>'
 $logoPath = $settings['logo'] ?? null;
 $logoUrl  = $logoPath ? UPLOAD_URL . $logoPath : BASE_URL . '/assets/img/logo-default.png';
 
-$hasToken     = !empty($settings['github_token']);
-$hasWebhook   = !empty($settings['github_webhook_secret']);
-$mailEnabled  = ($settings['mail_enabled'] ?? '0') === '1';
-$mailFromOk   = !empty($settings['mail_from']) && filter_var($settings['mail_from'], FILTER_VALIDATE_EMAIL);
+$hasToken       = !empty($settings['github_token']);
+$hasWebhook     = !empty($settings['github_webhook_secret']);
+$mailEnabled    = ($settings['mail_enabled'] ?? '0') === '1';
+$mailFromOk     = !empty($settings['mail_from']) && filter_var($settings['mail_from'], FILTER_VALIDATE_EMAIL);
+$smtpHost       = $settings['mail_smtp_host'] ?? '';
+$smtpPort       = $settings['mail_smtp_port'] ?? '587';
+$smtpEnc        = $settings['mail_smtp_encryption'] ?? 'tls';
+$smtpUser       = $settings['mail_smtp_user'] ?? '';
+$smtpHasPass    = !empty($settings['mail_smtp_pass']);
+$mailReplyTo    = $settings['mail_reply_to'] ?? '';
+$smtpConfigured = $smtpHost !== '' && $smtpUser !== '' && $smtpHasPass;
 $corHeader    = $settings['carteira_cor_header'] ?? '#1b3a6b';
 $corAcento    = $settings['carteira_cor_acento'] ?? '#c9a227';
 
@@ -429,16 +448,21 @@ include __DIR__ . '/includes/header.php';
 
     <!-- TAB EMAIL -->
     <div class="tab-pane fade" id="tabEmail">
-        <div class="card admin-card mb-3">
-            <div class="card-header"><i class="bi bi-envelope me-2"></i>Configurações de E-mail</div>
-            <div class="card-body">
-                <p class="text-muted small mb-3">
-                    O sistema usa <code>mail()</code> do PHP. Certifique-se de que o servidor de hospedagem permite envio de e-mails.
-                    Todas as mensagens usam o template com a logo e as cores da APEJESE.
-                </p>
-                <form method="POST">
-                    <?= csrfField() ?>
-                    <input type="hidden" name="section" value="email">
+        <form method="POST">
+            <?= csrfField() ?>
+            <input type="hidden" name="section" value="email">
+
+            <!-- Básico -->
+            <div class="card admin-card mb-3">
+                <div class="card-header d-flex align-items-center gap-2">
+                    <i class="bi bi-envelope me-1"></i>Configurações Básicas
+                    <?php if ($mailEnabled && $smtpConfigured): ?>
+                        <span class="badge bg-success ms-auto" style="font-size:.65rem;">SMTP ATIVO</span>
+                    <?php elseif ($mailEnabled): ?>
+                        <span class="badge bg-warning text-dark ms-auto" style="font-size:.65rem;">mail() — sem SMTP</span>
+                    <?php endif; ?>
+                </div>
+                <div class="card-body">
                     <div class="row g-3">
                         <div class="col-12">
                             <div class="form-check form-switch">
@@ -447,39 +471,121 @@ include __DIR__ . '/includes/header.php';
                                 <label class="form-check-label fw-medium" for="mailEnabled">Habilitar envio de e-mails</label>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-5">
                             <label class="form-label fw-medium">E-mail de Envio (From) <span class="text-danger">*</span></label>
                             <input type="email" name="mail_from" class="form-control"
                                    value="<?= e($settings['mail_from'] ?? '') ?>"
                                    placeholder="noreply@apejese.org.br">
                             <?php if ($mailEnabled && !$mailFromOk): ?>
                             <div class="text-danger small mt-1">
-                                <i class="bi bi-exclamation-circle me-1"></i>Envio habilitado mas o e-mail de envio é inválido — nenhuma mensagem será enviada.
+                                <i class="bi bi-exclamation-circle me-1"></i>E-mail de envio inválido — nenhuma mensagem será enviada.
                             </div>
                             <?php endif; ?>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label fw-medium">Nome de Exibição</label>
                             <input type="text" name="mail_from_name" class="form-control" maxlength="100"
                                    value="<?= e($settings['mail_from_name'] ?? 'APEJESE') ?>"
                                    placeholder="APEJESE">
                         </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">Reply-To <span class="text-muted fw-normal small">(opcional)</span></label>
+                            <input type="email" name="mail_reply_to" class="form-control"
+                                   value="<?= e($mailReplyTo) ?>"
+                                   placeholder="contato@apejese.org.br">
+                        </div>
                     </div>
-                    <div class="mt-3">
-                        <button type="submit" class="btn btn-primary-custom">
-                            <i class="bi bi-check-lg me-1"></i>Salvar E-mail
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
-        </div>
+
+            <!-- SMTP -->
+            <div class="card admin-card mb-3">
+                <div class="card-header">
+                    <i class="bi bi-shield-lock me-1"></i>Servidor SMTP
+                    <span class="text-muted fw-normal small ms-2">— recomendado para evitar spam</span>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        Configure um servidor SMTP autenticado para que os e-mails cheguem na caixa de entrada.
+                        Sem SMTP, o PHP usa <code>sendmail</code> local, que costuma ser bloqueado como spam.<br>
+                        <strong>Provedores recomendados:</strong>
+                        Gmail (porta 587 · TLS), Brevo (porta 587 · TLS), SendGrid (porta 587 · TLS), Outlook/Office 365 (porta 587 · TLS).
+                    </p>
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label fw-medium">Servidor SMTP (Host)</label>
+                            <input type="text" name="mail_smtp_host" class="form-control"
+                                   value="<?= e($smtpHost) ?>"
+                                   placeholder="smtp.gmail.com">
+                            <div class="form-text">Ex: smtp.gmail.com · smtp-relay.brevo.com · smtp.sendgrid.net</div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-medium">Porta</label>
+                            <input type="number" name="mail_smtp_port" class="form-control"
+                                   value="<?= e($smtpPort) ?>" min="1" max="65535" placeholder="587">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-medium">Criptografia</label>
+                            <select name="mail_smtp_encryption" class="form-select">
+                                <option value="tls"  <?= $smtpEnc === 'tls'  ? 'selected' : '' ?>>TLS / STARTTLS (porta 587)</option>
+                                <option value="ssl"  <?= $smtpEnc === 'ssl'  ? 'selected' : '' ?>>SSL (porta 465)</option>
+                                <option value="none" <?= $smtpEnc === 'none' ? 'selected' : '' ?>>Nenhuma (não recomendado)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <?php /* spacer */ ?>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-medium">Usuário SMTP</label>
+                            <input type="text" name="mail_smtp_user" class="form-control"
+                                   value="<?= e($smtpUser) ?>"
+                                   placeholder="seu@email.com" autocomplete="off">
+                            <div class="form-text">Normalmente o mesmo e-mail do "From".</div>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-medium">
+                                Senha SMTP
+                                <?php if ($smtpHasPass): ?>
+                                <span class="badge bg-success ms-1" style="font-size:.62rem;">CONFIGURADA</span>
+                                <?php endif; ?>
+                            </label>
+                            <input type="password" name="mail_smtp_pass" class="form-control"
+                                   placeholder="<?= $smtpHasPass ? 'Deixe em branco para manter' : 'Senha ou token de aplicativo' ?>"
+                                   autocomplete="new-password">
+                            <div class="form-text">
+                                Para Gmail use uma <strong>Senha de App</strong> (não a senha da conta).
+                                <?php if ($smtpHasPass): ?>
+                                <div class="form-check mt-1">
+                                    <input type="checkbox" name="mail_smtp_pass_clear" value="1" class="form-check-input" id="smtpPassClear">
+                                    <label class="form-check-label text-danger small" for="smtpPassClear">Remover senha salva</label>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php if ($smtpHost && (!$smtpUser || !$smtpHasPass)): ?>
+                    <div class="alert alert-warning small mt-3 mb-0 py-2">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        Host SMTP configurado mas usuário ou senha estão em falta — a autenticação falhará.
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary-custom">
+                    <i class="bi bi-check-lg me-1"></i>Salvar Configurações de E-mail
+                </button>
+            </div>
+        </form>
 
         <div class="card admin-card">
             <div class="card-header"><i class="bi bi-send-check me-2"></i>Testar Envio</div>
             <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <p class="text-muted small mb-0">
                     Envia um e-mail de teste para o seu endereço cadastrado
-                    (<strong><?= e(currentUser()['email'] ?? '—') ?></strong>) usando as configurações salvas.
+                    (<strong><?= e(currentUser()['email'] ?? '—') ?></strong>)
+                    <?= $smtpConfigured ? 'via SMTP configurado' : 'via mail() do PHP' ?>.
                 </p>
                 <form method="POST" data-no-unsaved>
                     <?= csrfField() ?>
